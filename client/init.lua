@@ -8,13 +8,17 @@ local function getItemMetadata()
 
 end
 
-local function openUI(bool)
+--- This will open the UI if is true
+---@param bool boolean open or close the UI
+---@param data {currentOwner:string,newOwner:string, signed:boolean,vehiclePlate:string}
+local function openUI(bool,data)
 	SetNuiFocus(bool,bool)
 	SendNUIMessage({
-		action = bool and "openUI" or "closeUI"
-		data = getItemMetadata()
+		action = bool and "openUI" or "closeUI",
+		data = bool and data or nil
 	})
 end
+
 
 local function setCurrentOwnerContractAsSigned(data,cb)
 	local currentOwner, newOwner, signed, vehiclePlate = data.currentOwner,data.newOwner,data.signed,data.vehiclePlate
@@ -38,6 +42,7 @@ local function checkVehicleOwner(data,cb)
 	cb(isValid)
 end
 
+RegisterNetEvent("communityVehicleTransfer::client::setClientContractData",function(data)
+	openUI(true,data)
+end)
 
-
-RegisterNUICallback("openUI",)
