@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Transfer Agreement</title>
+    <!-- Google Fonts for formal appearance and handwritten signature -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Pacifico&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #f0f0f0;
+        font-family: 'Playfair Display', serif;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .a4-sheet {
+        background: #fff;
+        width: 49.6rem;
+        height: 100%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+        border: 1px solid #d1c7b7;
+        margin: 2rem 0;
+        padding: 60px 60px 40px 60px;
+        box-sizing: border-box;
+        position: relative;
+      }
+      .contract-title {
+        text-align: center;
+        font-size: 2.4rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 2.5rem;
+        border-bottom: 2px solid #d1c7b7;
+        padding-bottom: 0.7rem;
+      }
+      .contract-body {
+        font-size: 1.15rem;
+        line-height: 2.1;
+        color: #222;
+        margin-bottom: 2.5rem;
+      }
+      .inline-input {
+        display: inline-block;
+        border: none;
+        border-bottom: 1px solid #b3a89e;
+        background: #faf5ef;
+        font-size: 1.1rem;
+        font-style: italic;
+        min-width: 120px;
+        padding: 2px 6px;
+        margin: 0 4px;
+        outline: none;
+      }
+      .inline-input.short {
+        min-width: 60px;
+      }
+      .signature-area {
+        margin-top: 3.5rem;
+        text-align: left;
+      }
+      .signature-label {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 0.3rem;
+      }
+      .signature-line {
+        border-bottom: 1.5px solid #333;
+        width: 320px;
+        margin: 0.8rem 0 0.2rem 0;
+      }
+      .signature-text {
+        font-family: 'Pacifico', cursive;
+        font-size: 2.1rem;
+        color: #2e2e2e;
+        display: none;
+        margin-top: -3.2rem;
+        margin-left: 10rem;
+        position: absolute;
+        background: transparent;
+        pointer-events: none;
+        user-select: none;
+      }
+      .sign-btn {
+        display: inline-block;
+        margin-top: 1.5rem;
+        padding: 0.7rem 2.2rem;
+        background: #5a4d41;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: background 0.3s;
+      }
+      .sign-btn:hover {
+        background: #42352c;
+      }
+      .signature-box {
+        border: 2px dashed #b3a89e;
+        border-radius: 8px;
+        width: 340px;
+        height: 60px;
+        margin: 0.8rem 0 0.2rem 0;
+        position: relative;
+        background: #faf5ef;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      .signature-box.signed {
+        border-color: #5a4d41;
+        background: #f5f2ee;
+        cursor: default;
+      }
+      .signature-placeholder {
+        color: #b3a89e;
+        font-size: 1.1rem;
+        font-style: italic;
+        padding-left: 16px;
+        user-select: none;
+      }
+      .signature-text {
+        font-family: 'Pacifico', cursive;
+        font-size: 2.1rem;
+        color: #2e2e2e;
+        display: none;
+        margin-left: 16px;
+        background: transparent;
+        pointer-events: none;
+        user-select: none;
+        position: absolute;
+        left: 0;
+        top: 82%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="a4-sheet">
+      <div class="contract-title">Vehicle Transfer Agreement</div>
+      <div class="contract-body">
+        This agreement certifies that
+        <input
+          class="inline-input"
+          id="currentOwner"
+          type="text"
+          placeholder="Current Owner's Full Name"
+        />
+        ("the Seller") hereby transfers all rights, title, and interest in the
+        vehicle with license plate
+        <span style="position: relative; display: inline-block">
+          <input
+            class="inline-input short"
+            id="plate"
+            type="text"
+            placeholder="ABC-1234"
+            style="padding-right: 28px"
+          />
+          <span
+            id="fetchInfoIcon"
+            title="Auto-fill vehicle info"
+            style="
+              display: none;
+              position: absolute;
+              right: 4px;
+              top: 50%;
+              transform: translateY(-50%);
+              cursor: pointer;
+            "
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle
+                cx="10"
+                cy="10"
+                r="9"
+                stroke="#5a4d41"
+                stroke-width="2"
+                fill="#faf5ef"
+              />
+              <path
+                d="M10 6V10"
+                stroke="#5a4d41"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <circle cx="10" cy="14" r="1" fill="#5a4d41" />
+            </svg>
+          </span>
+        </span>
+        to
+        <input
+          class="inline-input"
+          id="newOwner"
+          type="text"
+          placeholder="New Owner's Full Name"
+        />
+        ("the Buyer") as of
+        <input class="inline-input short" id="transferDate" type="date" />
+        .
+        <br /><br />
+        The Seller affirms that the vehicle is free of any liens and
+        encumbrances and that they have full authority to transfer ownership.
+        The Buyer accepts the vehicle in its current condition and agrees to all
+        terms stated herein.
+        <div
+          id="vehicleInfo"
+          style="
+            display: none;
+            margin: 0.5rem 0 1.5rem 0;
+            font-size: 1rem;
+            color: #444;
+            background: #f7f5f2;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+          "
+        >
+          <span id="vehicleBrand"></span>
+          <span id="vehicleModel" style="margin-left: 1.5rem"></span>
+          <span id="vehicleColor" style="margin-left: 1.5rem"></span>
+        </div>
+      </div>
+      <div class="signature-area" style="position: relative">
+        <div class="signature-label">Seller's Signature:</div>
+        <div class="signature-box" id="sellerSignatureBox">
+          <div class="signature-placeholder" id="sellerSignaturePlaceholder">
+            Click here to sign as Seller
+          </div>
+          <div id="sellerSignature" class="signature-text"></div>
+        </div>
+        <div class="signature-label" style="margin-top: 2.5rem">
+          Buyer's Signature:
+        </div>
+        <div class="signature-box" id="buyerSignatureBox">
+          <div class="signature-placeholder" id="buyerSignaturePlaceholder">
+            Click here to sign as Buyer
+          </div>
+          <div id="buyerSignature" class="signature-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="position: fixed; bottom: 18px; right: 18px; z-index: 1000">
+      <button
+        id="debugFill"
+        style="
+          padding: 0.5rem 1.2rem;
+          font-size: 1rem;
+          background: #e3e0d9;
+          border: 1px solid #b3a89e;
+          border-radius: 6px;
+          cursor: pointer;
+        "
+      >
+        Debug Fill
+      </button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+      // Variables globales para acceder en cualquier función
+      let contractData = {
+        plate: '',
+        currentOwner: '',
+        newOwner: '',
+        transferDate: '',
+        sellerSigned: false,
+        buyerSigned: false,
+        sellerSignatureName: '',
+        buyerSignatureName: '',
+      };
+
+      $(document).ready(function () {
+        // Auto-set today's date
+        const today = new Date().toISOString().substr(0, 10);
+        $('#transferDate').val(today);
+
+        // Escuchar mensajes de Lua
+        window.addEventListener('message', function (event) {
+          if (!event.data || !event.data.type) return;
+          switch (event.data.type) {
+            case 'populateContract':
+              populateContract(event.data.data);
+              break;
+            case 'canTransferCallback':
+              if (event.data.allowed) {
+                alert('Transfer allowed.');
+              } else {
+                alert('Transfer NOT allowed.');
+              }
+              break;
+            case 'vehicleInfo':
+              // Mostrar info del vehículo
+              $('#vehicleBrand').text(
+                event.data.brand ? 'Brand: ' + event.data.brand : ''
+              );
+              $('#vehicleModel').text(
+                event.data.model ? 'Model: ' + event.data.model : ''
+              );
+              $('#vehicleColor').text(
+                event.data.color ? 'Color: ' + event.data.color : ''
+              );
+              $('#vehicleInfo').show();
+              break;
+          }
+        });
+
+        // Firmar Seller
+        $('#sellerSignatureBox').on('click', function () {
+          if (contractData.sellerSigned) return;
+          contractData.plate = $('#plate').val();
+          contractData.currentOwner = $('#currentOwner').val();
+          contractData.newOwner = $('#newOwner').val();
+          contractData.transferDate = $('#transferDate').val();
+          contractData.sellerSigned = true;
+          contractData.sellerSignatureName =
+            contractData.currentOwner || 'Johann Krauss';
+
+          $('#sellerSignature').text(contractData.sellerSignatureName).show();
+          $('#sellerSignaturePlaceholder').hide();
+          $('#sellerSignatureBox').addClass('signed');
+
+          // Enviar datos a Lua
+          $.post(
+            'https://communityVehicleTransfer/signSeller',
+            JSON.stringify(contractData),
+            null,
+            'json'
+          );
+        });
+
+        // Firmar Buyer
+        $('#buyerSignatureBox').on('click', function () {
+          if (contractData.buyerSigned) return;
+          contractData.plate = $('#plate').val();
+          contractData.currentOwner = $('#currentOwner').val();
+          contractData.newOwner = $('#newOwner').val();
+          contractData.transferDate = $('#transferDate').val();
+          contractData.buyerSigned = true;
+          contractData.buyerSignatureName = contractData.newOwner || 'Jane Doe';
+
+          $('#buyerSignature').text(contractData.buyerSignatureName).show();
+          $('#buyerSignaturePlaceholder').hide();
+          $('#buyerSignatureBox').addClass('signed');
+
+          // Enviar datos a Lua
+          $.post(
+            'https://communityVehicleTransfer/signBuyer',
+            JSON.stringify(contractData),
+            null,
+            'json'
+          );
+        });
+
+        // Mostrar icono al escribir placa
+        $('#plate').on('input', function () {
+          if ($(this).val().length > 0) {
+            $('#fetchInfoIcon').fadeIn(120);
+          } else {
+            $('#fetchInfoIcon').fadeOut(120);
+            $('#vehicleInfo').hide();
+          }
+        });
+
+        // Al hacer click en el icono, pedir info al backend (Lua)
+        $('#fetchInfoIcon').on('click', function () {
+          const plate = $('#plate').val();
+          if (!plate) return;
+          // Enviar mensaje a Lua para pedir info del vehículo
+          $.post(
+            'https://communityVehicleTransfer/fetchVehicleInfo',
+            JSON.stringify({ plate }),
+            null,
+            'json'
+          );
+        });
+
+        // DEBUG: Rellenar datos de prueba al hacer click en el botón
+        $('#debugFill').on('click', function () {
+          const debugData = {
+            plate: 'XYZ-9876',
+            currentOwner: 'Alice Johnson',
+            newOwner: 'Bob Smith',
+            transferDate: '2025-05-13',
+            sellerSigned: true,
+            buyerSigned: true,
+            sellerSignatureName: 'Alice Johnson',
+            buyerSignatureName: 'Bob Smith',
+            brand: 'Toyota',
+            model: 'Corolla',
+            color: 'Red',
+          };
+          populateContract(debugData);
+          $('#vehicleBrand').text('Brand: ' + debugData.brand);
+          $('#vehicleModel').text('Model: ' + debugData.model);
+          $('#vehicleColor').text('Color: ' + debugData.color);
+          $('#vehicleInfo').show();
+        });
+      });
+
+      // Rellenar contrato desde Lua o JS
+      function populateContract(data) {
+        if (!data) return;
+        contractData = {
+          plate: data.plate || '',
+          currentOwner: data.currentOwner || '',
+          newOwner: data.newOwner || '',
+          transferDate: data.transferDate || '',
+          sellerSigned: !!data.sellerSigned,
+          buyerSigned: !!data.buyerSigned,
+          sellerSignatureName:
+            data.sellerSignatureName || data.currentOwner || '',
+          buyerSignatureName: data.buyerSignatureName || data.newOwner || '',
+        };
+        $('#plate').val(contractData.plate);
+        $('#currentOwner').val(contractData.currentOwner);
+        $('#newOwner').val(contractData.newOwner);
+        if (contractData.transferDate) {
+          $('#transferDate').val(contractData.transferDate);
+        }
+
+        // Seller signature
+        if (contractData.sellerSigned) {
+          $('#sellerSignature').text(contractData.sellerSignatureName).show();
+          $('#sellerSignaturePlaceholder').hide();
+          $('#sellerSignatureBox').addClass('signed');
+        } else {
+          $('#sellerSignature').hide();
+          $('#sellerSignaturePlaceholder').show();
+          $('#sellerSignatureBox').removeClass('signed');
+        }
+
+        // Buyer signature
+        if (contractData.buyerSigned) {
+          $('#buyerSignature').text(contractData.buyerSignatureName).show();
+          $('#buyerSignaturePlaceholder').hide();
+          $('#buyerSignatureBox').addClass('signed');
+        } else {
+          $('#buyerSignature').hide();
+          $('#buyerSignaturePlaceholder').show();
+          $('#buyerSignatureBox').removeClass('signed');
+        }
+      }
+      // Aquí puedes agregar más funciones usando contractData global
+    </script>
+  </body>
+</html>
