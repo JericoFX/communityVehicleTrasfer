@@ -58,6 +58,11 @@ RegisterNUICallback("closeUI", function(data, cb)
 	cb("ok")
 end)
 
+RegisterNUICallback("signCurrentOwner", function(data, cb)
+	TriggerServerEvent("communityVehicle:server:signCurrentOwner", data)
+	cb("ok")
+end)
+
 RegisterNUICallback("signNewOwner", function(data, cb)
 	local result = lib.callback("communityVehicle:server:signNewOwner", false, data)
 	cb("ok")

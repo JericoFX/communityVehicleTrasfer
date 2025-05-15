@@ -28,7 +28,28 @@ lib.callback.register("communityVehicle:server:getOwner", function(source, plate
     end
     return result and vehicle or false
 end)
-
+RegisterNetEvent("communityVehicle:server:signCurrentOwner", function(data)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then
+        return lib.notify({
+            title = "No Player Found",
+            description = "No Player Found",
+            type = "error"
+        })
+    end
+    local vehicle = activeTransfers[Player.PlayerData.source]
+    if vehicle then
+        vehicle.currentOwnerSign = true
+        activeTransfers[Player.PlayerData.source] = vehicle
+        TriggerClientEvent("communityVehicle:client:signNewOwner", source, vehicle)
+    else
+        lib.notify({
+            title = "No Vehicle Found",
+            description = "You are not the owner of this vehicle.",
+            type = "error"
+        })
+    end
+end)
 --https://overextended.dev/ox_lib/Modules/AddCommand/Server
 lib.addCommand("cTransferVehicle", {
     help = "Transfer a vehicle to another player",
