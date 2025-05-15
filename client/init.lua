@@ -49,7 +49,6 @@ local function openUI(bool, data)
 	})
 end
 
-
 local function setCurrentOwnerContractAsSigned(data, cb)
 	local currentOwner, newOwner, signed, vehiclePlate = data.currentOwner, data.newOwner, data.signed, data
 		.vehiclePlate
@@ -57,14 +56,20 @@ local function setCurrentOwnerContractAsSigned(data, cb)
 	cb("ok")
 end
 
-local function updateItemMetadata(data, cb)
 
-end
 
-local function setNewOwnerContractAsSigned(data)
-	--NEW OWNER ALREADY SIGNED SO IS SAFE TO TRANSFER THE VEHICLE TO THE OTHER OWNER
-	local signed = data.signed
-	Bridge.Callback.Trigger(setEventName("setNewOwnerContractAsSigned"), signed)
+local function setNewOwnerContractAsSigned(data, cb)
+	local signed = data.currentOwnerSigned and not data.newOwnerSigned
+
+	local isSuccess = lib.callback.await("communityVehicleTransfer::server::setNewOwnerContractAsSigned", false, data)
+	if isSuccess then
+		lib.notify({
+			title = 'Vehicle Transfer',
+			description = 'You have successfully signed the contract',
+			type = 'success'
+		})
+	end
+	cb("ok")
 end
 
 local function checkVehicleOwner(data, cb)
@@ -76,3 +81,31 @@ end
 RegisterNetEvent("communityVehicleTransfer::client::setClientContractData", function(data)
 	openUI(true, data)
 end)
+
+AddEventHandler("communityVehicleTransfer::client::openUI", function(data)
+	local information = lib.callback.await("communityVehicleTransfer::server::getData", false, getClosestPlayer(),
+		getVehiclePlate())
+	if not information then
+		lib.notify({
+			title = 'Vehicle Transfer',
+			description = 'No vehicle found nearby.',
+			type = 'error'
+		})
+		return
+	end
+	openUI(true, information)
+end)
+
+AddEventHandler("communityVehicleTransfer::client::closeUI", function()
+	SetNuiFocus(false, false)
+end)
+RegisterNUICallback("closeUI", function(data, cb)
+	SetNuiFocus(false, false)
+	cb("ok")
+end)
+
+RegisterNUICallback("setCurrentOwnerContractAsSigned", setCurrentOwnerContractAsSigned)
+
+RegisterNUICallback("setNewOwnerContractAsSigned", setNewOwnerContractAsSigned)
+
+RegisterNUICallback("checkVehicleOwner", checkVehicleOwner)
