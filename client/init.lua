@@ -59,7 +59,6 @@ end
 
 
 local function setNewOwnerContractAsSigned(data, cb)
-	--NEW OWNER ALREADY SIGNED SO IS SAFE TO TRANSFER THE VEHICLE TO THE OTHER OWNER
 	local signed = data.currentOwnerSigned and not data.newOwnerSigned
 
 	local isSuccess = lib.callback.await("communityVehicleTransfer::server::setNewOwnerContractAsSigned", false, data)
