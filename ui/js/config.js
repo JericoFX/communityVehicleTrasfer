@@ -9,5 +9,8 @@ const contractConfig = {
     vin: '1HGCM82633A004352',
     color: 'Black',
     newOwner: 'Michael Rivera',
+    newOwnerId: '1',
+    newOwnerCitizenID: '987654321',
+    currentRole: 'currentOwner',
   },
 };

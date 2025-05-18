@@ -63,6 +63,12 @@ input {
 .signature-field.signed {
   color: #333;
 }
+.signature-field.disabled {
+  border-color: #e0e0e0;
+  cursor: not-allowed;
+  user-select: none;
+  pointer-events: none;
+}
 .controls {
   display: flex;
   justify-content: space-between;

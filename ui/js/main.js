@@ -22,12 +22,17 @@ $(document).ready(function () {
   $('#labelNewSignature').text(t.labelNewSignature);
   $('#cancelBtn').text(t.cancelBtn);
   $('#submitBtn').text(t.submitBtn);
-
+  $('#labelDate').text(t.labelDate);
+  $('#labelNewOwnerId').text(t.labelNewOwnerId);
+  $('#labelNewOwnerCitizenID').text(t.labelNewOwnerCitizenID);
   // prefill data
   $.each(contractConfig.prefill, function (key, val) {
     $(`[name="${key}"]`).val(val);
+    console.log(key, val);
   });
-
+  if ($('[name="currentRole"]').val() !== contractConfig.prefill.currentRole) {
+    $('[data-sign-for="newOwner"]').addClass('disabled');
+  }
   // placeholder for message events
   $(window).on('message', function (event) {
     const msg = event.originalEvent.data;
@@ -41,14 +46,29 @@ $(document).ready(function () {
   // signature click: fill in cursive name
   $('[data-role="sign"]').on('click', function () {
     const role = $(this).data('sign-for');
+    // Solo permite firmar si el rol coincide con el usuario actual
+
     let name = '';
     if (role === 'currentOwner') {
       name = $('#firstName').val() + ' ' + $('#lastName').val();
     } else if (role === 'newOwner') {
-      name = $('#newOwner').val();
+      // Seguridad: Evita que el current owner firme como new owner
+      // Puedes comparar el nombre del new owner con el current owner
+      const currentOwnerName =
+        $('#firstName').val() + ' ' + $('#lastName').val();
+      const newOwnerName = $('#newOwner').val();
+      if (
+        currentOwnerName.trim().toLowerCase() ===
+        newOwnerName.trim().toLowerCase()
+      ) {
+        alert('El propietario actual no puede firmar como nuevo propietario.');
+        return;
+      }
+      name = newOwnerName;
     }
     if (name) {
       $(this).addClass('signed').text(name);
+      updateSubmitButtonState();
     } else {
       alert(
         t.labelFirstName + ' ' + t.labelLastName + ' ' + 'required to sign'
@@ -58,6 +78,8 @@ $(document).ready(function () {
 
   // cancel and submit
   $('#cancelBtn').on('click', function () {
+    $('input').val('');
+    $('.signature-field').removeClass('signed').text('');
     location.reload();
   });
   $('#submitBtn').on('click', function () {
@@ -65,24 +87,31 @@ $(document).ready(function () {
     $('input').each(function () {
       values[this.name] = $(this).val();
     });
-    const allSigned = $('.signature-field')
-      .toArray()
-      .every((el) => $(el).hasClass('signed'));
+    const allSigned = $('[data-sign-for="currentOwner"]').hasClass('signed');
     if (!allSigned) {
-      alert('All signatures are required.');
+      alert('Please sign the contract before submitting.');
       return;
     }
     $.post(
-      'https://contract/submit',
+      `https://${GetCurrentResourceName()}/submitContract`,
       JSON.stringify(values),
       function (response) {
         if (response.status === 'ok') {
-          alert('Contract submitted successfully.');
           location.reload();
         } else {
-          alert('Error submitting contract: ' + response.error);
+          console.log('Error:', response.error);
         }
       }
     );
   });
+
+  function updateSubmitButtonState() {
+    const currentOwnerSigned = $(
+      '.signature-field[data-sign-for="currentOwner"]'
+    ).hasClass('signed');
+    $('#submitBtn').prop('disabled', !currentOwnerSigned);
+  }
+
+  // Llama al cargar la página
+  updateSubmitButtonState();
 });
