@@ -18,6 +18,7 @@ local function openNUI(data, boolean)
         action = boolean and "open" or "close",
         data = {
             contract = currentContract or nil,
+            locale = config.language
         }
     })
 end
@@ -40,8 +41,8 @@ local function newContract(_data)
     for k, v in pairs(vehicle) do
         options[#options + 1] = {
             title = ("%s %s"):format(v.brand, v.model),
-            description = ("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s"):format(v.plate, v.mileage, v.brand,
-                v.model),
+            description = locale("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s", v.plate, v.mileage, v.brand,
+            v.model),
             icon = "fa car",
             args = {
                 --añadir datos de los 2 jugadores

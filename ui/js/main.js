@@ -1,6 +1,6 @@
 $(document).ready(function () {
   const lang = getUserLang();
-  const t = translations[lang];
+  let t = null;
   let contract = {};
 
   // onLoad logic
@@ -50,6 +50,8 @@ $(document).ready(function () {
     }
     switch (action) {
       case 'open':
+        const lang = getUserLang(data.language);
+        t = translations[lang];
         location.reload();
         fillContractFields(data);
         toggleUI(true);
@@ -108,7 +110,7 @@ $(document).ready(function () {
       ) {
         $.post(
           `https://${GetCurrentResourceName()}/error`,
-          JSON.stringify('You cant sign in the two places'),
+          JSON.stringify(t.notifications.cannotSignTwice),
           function (response) {
             if (response.status === 'ok') {
               location.reload();
