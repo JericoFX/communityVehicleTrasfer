@@ -36,7 +36,7 @@ end
 function Core:GetAllVehicles(source)
     local player = self.GetPlayerData(source, "citizenid")
     local vehicles = db.GetAllVehicles(player)
-    return vehicles
+    return #vehicles > 0 and vehicles or nil
 end
 
 return Core

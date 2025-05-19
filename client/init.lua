@@ -1,23 +1,34 @@
-local NAME = ("%s::%s"):format(GetCurrentResourceName(), not IsDuplicityVersion() and "server" or "client")
+local NAME            = GetCurrentResourceName()
+local currentContract = {}
 
-local function eventName(name)
-    return ("%s:%s"):format(NAME, name)
+local function openNUI(data, boolean)
+    local contract = {}
+    if data then
+        contract = {
+            currentOwnerId = data.currentOwnerId,
+            newOwnerId = data.newOwnerId,
+            vehicle = data.vehicle
+        }
+        currentContract = contract
+        contract = nil
+    end
+    SetNuiFocus(boolean, boolean)
+    SendNUIMessage({
+        action = boolean and "open" or "close",
+        data = {
+            contract = currentContract or nil,
+        }
+    })
 end
 
-local function startNewContract(data)
-    local _data = next(data) --[[data]] --[[@as Contract]]
-end
-
-RegisterCommand("contract", function(source, args, rawCommand)
+local function newContract(_data)
     local options = {}
     if IsNuiFocused() then
         return
     end
-    local vehicle = lib.callback.await(eventName("getVehicle"), false)
-    if not vehicle then
-        return
-    end
-    if next(vehicle) == nil then
+    local vehicle = lib.callback.await(NAME .. "::server::getVehicle", false)
+
+    if not next(vehicle) or not vehicle then
         lib.notify({
             title = "No vehicles found",
             description = "You don't have any vehicles.",
@@ -28,18 +39,27 @@ RegisterCommand("contract", function(source, args, rawCommand)
     for k, v in pairs(vehicle) do
         options[#options + 1] = {
             title = ("%s %s"):format(v.brand, v.model),
-            description = ("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s"):format(v.plate, v.mileage, v.brand, v.model),
+            description = ("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s"):format(v.plate, v.mileage, v.brand,
+                v.model),
             icon = "fa car",
             args = {
+                --añadir datos de los 2 jugadores
                 id = v.id,
-                plate = v.plate,
-                mileage = v.mileage,
-                brand = v.brand,
-                model = v.model
+                vehicle = {
+                    plate = v.plate,
+                    mileage = v.mileage,
+                    brand = v.brand,
+                    model = v.model
+                }
             },
             onSelect = function(data, cb)
-                local vehicle = data.args
-                
+                local _vehicle = data.args.vehicle
+                currentContract = {
+                    currentOwnerId = GetPlayerServerId(PlayerId()),
+                    newOwnerId = GetPlayerServerId(_data.entity),
+                    vehicle = _vehicle
+                }
+                openNUI(currentContract, true)
             end
         }
     end
@@ -49,8 +69,45 @@ RegisterCommand("contract", function(source, args, rawCommand)
         options = options
     })
     lib.showContext("_Vehicle_Contract_")
-end, false)
+end
 
+local function setNewOwnerSign(data)
+    openNUI(data, true)
+end
+--#region NUI Callbacks
+RegisterNUICallback("close", function(data, cb)
+    openNUI(nil, false)
+    cb("ok")
+end)
 
+RegisterNUICallback("CurrentOwnerSigned", function(data, cb)
+    local result = lib.callback.await(NAME .. "::server::currentOwnerSigned", false, data)
+    cb("ok")
+end)
 
-RegisterNetEvent(eventName("startNewContract"), startNewContract)
+RegisterNUICallback("NewOwnerSigned", function(data, cb)
+    local result = lib.callback.await(NAME .. "::server::newOwnerSigned", false, data)
+    cb("ok")
+end)
+
+RegisterNUICallback("cancel", function(data, cb)
+    openNUI(nil, false)
+    cb("ok")
+end)
+--#endregion
+RegisterNetEvent(NAME .. "::client::setNewOwnerSign", setNewOwnerSign)
+
+CreateThread(function()
+    exports.ox_target:addGlobalPed({
+        name = 'vehicle_contract',
+        icon = 'fa-solid fa-car-side',
+        label = locale('toggle_front_driver_door'),
+        distance = 2,
+        canInteract = function(entity, distance, coords, name)
+            return IsEntityAPed(entity) and not IsPedDeadOrDying(entity, true) and not IsPedInAnyVehicle(entity, false)
+        end,
+        onSelect = function(data)
+            newContract(data)
+        end
+    })
+end)
