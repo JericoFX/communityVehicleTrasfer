@@ -1,3 +1,4 @@
+lib.locale()
 local NAME            = GetCurrentResourceName()
 local currentContract = {}
 
@@ -82,11 +83,15 @@ end)
 
 RegisterNUICallback("CurrentOwnerSigned", function(data, cb)
     local result = lib.callback.await(NAME .. "::server::currentOwnerSigned", false, data)
+    openNUI(nil, false)
     cb("ok")
 end)
 
 RegisterNUICallback("NewOwnerSigned", function(data, cb)
     local result = lib.callback.await(NAME .. "::server::newOwnerSigned", false, data)
+    if result then
+        openNUI(nil, false)
+    end
     cb("ok")
 end)
 
@@ -94,6 +99,18 @@ RegisterNUICallback("cancel", function(data, cb)
     openNUI(nil, false)
     cb("ok")
 end)
+
+RegisterNUICallback("error", function(data, cb)
+    --https://overextended.dev/ox_lib/Modules/Interface/Client/notify#libnotify
+    lib.notify({
+        title = "ERROR",
+        description = data,
+        type = 'error', --'inform' or 'error' or 'success'or 'warning'
+        duration = 3000
+    })
+    cb("ok")
+end)
+
 --#endregion
 RegisterNetEvent(NAME .. "::client::setNewOwnerSign", setNewOwnerSign)
 

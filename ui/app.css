@@ -1,6 +1,7 @@
 body {
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
+
+  display: none;
 }
 .contract-container {
   background: white;

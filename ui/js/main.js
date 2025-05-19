@@ -1,7 +1,7 @@
 $(document).ready(function () {
   const lang = getUserLang();
   const t = translations[lang];
-
+  let contract = {};
   // onLoad logic
   $('#seal').attr('src', contractConfig.sealUrl);
   $('#title').text(t.title);
@@ -26,21 +26,46 @@ $(document).ready(function () {
   $('#labelNewOwnerId').text(t.labelNewOwnerId);
   $('#labelNewOwnerCitizenID').text(t.labelNewOwnerCitizenID);
   // prefill data
-  $.each(contractConfig.prefill, function (key, val) {
-    $(`[name="${key}"]`).val(val);
-    console.log(key, val);
-  });
+  function toggleUI(show) {
+    if (show) {
+      $('body').fadeIn(200); // 200 ms de animación
+    } else {
+      $('body').fadeOut(200);
+    }
+  }
   if ($('[name="currentRole"]').val() !== contractConfig.prefill.currentRole) {
     $('[data-sign-for="newOwner"]').addClass('disabled');
   }
   // placeholder for message events
   $(window).on('message', function (event) {
     const msg = event.originalEvent.data;
-    // switch(msg.action) {
-    //   case 'loadContractType':
-    //     // TODO
-    //     break;
-    // }
+    let data = msg.data;
+    let action = msg.action;
+    if (msg.action === undefined) {
+      return;
+    }
+    switch (action) {
+      case 'open':
+        location.reload();
+        fillContractFields(data);
+        toggleUI(true);
+        break;
+      case 'close':
+        $.post(
+          `https://${GetCurrentResourceName()}/close`,
+          JSON.stringify({}),
+          function (response) {
+            if (response.status === 'ok') {
+              location.reload();
+            } else {
+              console.log('Error:', response.error);
+            }
+          }
+        );
+        toggleUI;
+        false;
+        break;
+    }
   });
 
   // signature click: fill in cursive name
@@ -61,7 +86,18 @@ $(document).ready(function () {
         currentOwnerName.trim().toLowerCase() ===
         newOwnerName.trim().toLowerCase()
       ) {
-        alert('El propietario actual no puede firmar como nuevo propietario.');
+        $.post(
+          `https://${GetCurrentResourceName()}/error`,
+          JSON.stringify('You cant sign in the two places'),
+          function (response) {
+            if (response.status === 'ok') {
+              location.reload();
+            } else {
+              console.log('Error:', response.error);
+            }
+          }
+        );
+
         return;
       }
       name = newOwnerName;
@@ -89,7 +125,10 @@ $(document).ready(function () {
     });
     const allSigned = $('[data-sign-for="currentOwner"]').hasClass('signed');
     if (!allSigned) {
-      alert('Please sign the contract before submitting.');
+      $.post(
+        `https://${GetCurrentResourceName()}/error`,
+        JSON.stringify('You need to sign the document first')
+      );
       return;
     }
     $.post(
@@ -115,3 +154,15 @@ $(document).ready(function () {
   // Llama al cargar la página
   updateSubmitButtonState();
 });
+
+/**
+ * Rellena los campos del contrato con los datos recibidos.
+ * @param {Object} data - Objeto con los datos a rellenar (ej: { firstName: 'Juan', lastName: 'Pérez', ... })
+ */
+function fillContractFields(data) {
+  Object.entries(data).forEach(([key, value]) => {
+    $(`[name="${key}"]`).val(value);
+  });
+  // Si necesitas actualizar otros elementos (no inputs), agrégalo aquí
+  // Por ejemplo: $('#labelFirstName').text(data.firstName);
+}
