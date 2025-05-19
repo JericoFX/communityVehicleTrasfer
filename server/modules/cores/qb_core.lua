@@ -33,4 +33,10 @@ function Core:GetVehicleInformation(source, plate)
     return information
 end
 
+function Core:GetAllVehicles(source)
+    local player = self.GetPlayerData(source, "citizenid")
+    local vehicles = db.GetAllVehicles(player)
+    return vehicles
+end
+
 return Core
