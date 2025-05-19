@@ -54,6 +54,7 @@ $(document).ready(function () {
         t = translations[lang];
         location.reload();
         fillContractFields(data);
+        contract = data;
         toggleUI(true);
         break;
       case 'close':
@@ -68,6 +69,7 @@ $(document).ready(function () {
             }
           }
         );
+        contract = {};
         toggleUI(false);
         break;
       case 'openForNewOwner':
@@ -90,10 +92,10 @@ $(document).ready(function () {
     let name = '';
     if (role === 'currentOwner') {
       name = $('#firstName').val() + ' ' + $('#lastName').val();
-      // Envía mensaje a Lua y oculta el UI
+      contract.currentOwnerSigned = true;
       $.post(
         `https://${GetCurrentResourceName()}/currentOwnerSigned`,
-        JSON.stringify({ signed: true }),
+        JSON.stringify({ contract }),
         function () {
           toggleUI(false);
         }
@@ -124,7 +126,6 @@ $(document).ready(function () {
       name = newOwnerName;
       // Firma y envía automáticamente el contrato
       $(this).addClass('signed').text(name);
-      updateSubmitButtonState();
 
       const values = {};
       $('input').each(function () {
@@ -161,7 +162,7 @@ $(document).ready(function () {
   });
 
   // Submit (solo para casos legacy, normalmente no se usará con este flujo)
-  $('#submitBtn').on('click', function () {
+  /*  $('#submitBtn').on('click', function () {
     const values = {};
     $('input').each(function () {
       values[this.name] = $(this).val();
@@ -190,7 +191,7 @@ $(document).ready(function () {
         }
       }
     );
-  });
+  }); */
 
   // Habilita/deshabilita el submit según firmas (legacy)
   function updateSubmitButtonState() {

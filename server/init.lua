@@ -68,7 +68,6 @@ lib.callback.register(NAME .. "::server::startNewContract", function(source, dat
     currentContracts[source] = data
     currentContracts[source].role = "currentOwner"
     currentContracts[data.newOwnerId] = data
-    currentContracts[data.newOwnerId].role = "newOwner"
     TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
     return true
 end)
@@ -82,6 +81,7 @@ lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
         return false, "No contract found."
     end
     local contract = currentContracts[data.currentOwnerId]
+    contract.role = "newOwner"
     TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
         title = "Contract Accepted",
         description = "The new owner has accepted the contract.",

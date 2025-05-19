@@ -28,8 +28,12 @@ local function newContract(_data)
     if IsNuiFocused() then
         return
     end
-    local vehicle = lib.callback.await(NAME .. "::server::getVehicle", false)
-
+    local temp    = {
+        currentOwnerId = cache.serverId,
+        newOwnerId = GetPlayerServerId(_data.entity),
+        role = "currentOwner"
+    }
+    local vehicle = lib.callback.await(NAME .. "::server::startNewContract", false, temp)
     if not next(vehicle) or not vehicle then
         lib.notify({
             title = "No vehicles found",
@@ -42,7 +46,7 @@ local function newContract(_data)
         options[#options + 1] = {
             title = ("%s %s"):format(v.brand, v.model),
             description = locale("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s", v.plate, v.mileage, v.brand,
-            v.model),
+                v.model),
             icon = "fa car",
             args = {
                 --añadir datos de los 2 jugadores
@@ -59,7 +63,8 @@ local function newContract(_data)
                 currentContract = {
                     currentOwnerId = GetPlayerServerId(PlayerId()),
                     newOwnerId = GetPlayerServerId(_data.entity),
-                    vehicle = _vehicle
+                    vehicle = _vehicle,
+                    role = "currentOwner"
                 }
                 openNUI(currentContract, true)
             end
