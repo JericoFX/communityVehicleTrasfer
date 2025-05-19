@@ -50,25 +50,8 @@ end)
 ---@param data Contract
 ---@return boolean,string?
 lib.callback.register(NAME .. "::server::startNewContract", function(source, data)
-    --- Check the players here and the vehicle info
-    if not data.currentOwnerId or not data.newOwnerId then
-        return false, "Invalid contract data."
-    end
-
-    if currentContracts[source] then
-        return false, "You already have a contract."
-    end
-    if currentContracts[data.newOwnerId] then
-        return false, "The new owner already has a contract."
-    end
-    local vehicles = Framework:GetAllVehicles(source)
-    if not vehicles then
-        return false, "You don't have any vehicles."
-    end
-    currentContracts[source] = data
-    currentContracts[source].role = "currentOwner"
-    currentContracts[data.newOwnerId] = data
-    TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
+    -- CHECK INFO OF BOTH PLAYERS, FILL THE CURRENTCONTRACT TABLE, CHECK THE VEHICOES AND SEND BACK TO LUA
+    -- TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
     return true
 end)
 
