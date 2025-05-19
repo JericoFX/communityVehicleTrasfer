@@ -4,78 +4,51 @@ local currentContract = {}
 
 local function openNUI(data, boolean)
     local contract = {}
-    if data then
-        contract = {
-            currentOwnerId = data.currentOwnerId,
-            newOwnerId = data.newOwnerId,
-            vehicle = data.vehicle
-        }
-        currentContract = contract
-        contract = nil
-    end
+
     SetNuiFocus(boolean, boolean)
     SendNUIMessage({
         action = boolean and "open" or "close",
         data = {
-            contract = currentContract or nil,
+            contract = data or nil,
             locale = config.language
         }
     })
 end
 
 local function newContract(_data)
-    local options = {}
     if IsNuiFocused() then
         return
     end
-    local temp    = {
-        currentOwnerId = cache.serverId,
-        newOwnerId = GetPlayerServerId(_data.entity),
-        role = "currentOwner"
-    }
-    local vehicle = lib.callback.await(NAME .. "::server::startNewContract", false, temp)
-    if not next(vehicle) or not vehicle then
+    local vehicle = lib.getClosestVehicle(GetEntityCoords(cache.ped), 3.0, true)
+
+    if not vehicle then
         lib.notify({
-            title = "No vehicles found",
-            description = "You don't have any vehicles.",
+            title = "No vehicle found",
+            description = "You need to be near a vehicle.",
             type = "error"
         })
         return
     end
-    for k, v in pairs(vehicle) do
-        options[#options + 1] = {
-            title = ("%s %s"):format(v.brand, v.model),
-            description = locale("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s", v.plate, v.mileage, v.brand,
-                v.model),
-            icon = "fa car",
-            args = {
-                --añadir datos de los 2 jugadores
-                id = v.id,
-                vehicle = {
-                    plate = v.plate,
-                    mileage = v.mileage,
-                    brand = v.brand,
-                    model = v.model
-                }
-            },
-            onSelect = function(data, cb)
-                local _vehicle = data.args.vehicle
-                currentContract = {
-                    currentOwnerId = GetPlayerServerId(PlayerId()),
-                    newOwnerId = GetPlayerServerId(_data.entity),
-                    vehicle = _vehicle,
-                    role = "currentOwner"
-                }
-                openNUI(currentContract, true)
-            end
-        }
+    local temp = {
+
+    }
+    temp[cache.serverId] = {
+        currentOwnerId = cache.serverId,
+        newOwnerId = GetPlayerServerId(_data.entity),
+        vehicle = vehicle,
+        plate = GetVehicleNumberPlateText(vehicle),
+    }
+    local information, error = lib.callback.await(NAME .. "::server::startNewContract", false, temp)
+    if not information then
+        lib.notify({
+            title = "Error",
+            description = error,
+            type = "error"
+        })
+        return
     end
-    lib.registerContext({
-        id = "_Vehicle_Contract_",
-        title = "Vehicle Contract",
-        options = options
-    })
-    lib.showContext("_Vehicle_Contract_")
+    temp = {}
+    openNUI(information, true)
 end
 
 local function setNewOwnerSign(data)

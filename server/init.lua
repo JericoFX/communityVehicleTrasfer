@@ -50,28 +50,69 @@ end)
 ---@param data Contract
 ---@return boolean,string?
 lib.callback.register(NAME .. "::server::startNewContract", function(source, data)
-    -- CHECK INFO OF BOTH PLAYERS, FILL THE CURRENTCONTRACT TABLE, CHECK THE VEHICOES AND SEND BACK TO LUA
-    -- TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
-    return true
+    local Player, Target = Framework:GetPlayer(source), Framework:GetPlayer(data.newOwnerId)
+    if not Player or not Target then
+        return false, "Player not found."
+    end
+    local checkVehicleForPlate = Framework:GetVehicleInformation(Player.PlayerData.citizenid, data.plate)
+    if not checkVehicleForPlate then
+        return false, "Vehicle not found."
+    end
+
+    currentContracts[source] = {
+        source = source,
+        currentOwner = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname,
+        currentOwnerId = Player.PlayerData.citizenid,
+        currentOwnerName = Player.PlayerData.name,
+        currentOwnerCitizenID = Player.PlayerData.citizenid,
+        newOwner = Target.PlayerData.charinfo.firstname .. " " .. Target.PlayerData.charinfo.lastname,
+        newOwnerId = Target.PlayerData.source,
+        newOwnerName = Target.PlayerData.name,
+        newOwnerCitizenID = Target.PlayerData.citizenid,
+        role = "currentOwner",
+        currenOwnerSign = false,
+        newOwnerSign = false,
+        vehicle = checkVehicleForPlate
+    }
+
+    -- CHECK INFO OF BOTH PLAYERS, FILL THE CURRENTCONTRACT TABLE, CHECK THE VEHICLES AND SEND BACK TO LUA
+    --TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
+    return currentContracts[source]
+end)
+
+
+lib.callback.register(NAME .. "::server::currentOwnerSigned", function(source, data)
+    if not currentContracts[source] then
+        return false, "No contract found."
+    end
+    local contract = currentContracts[source]
+    contract.role = "newOwner"
+    contract.currenOwnerSign = true
+    TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
+        title = "Contract Accepted",
+        description = "You have accepted the contract.",
+        type = 'success', --'inform' or 'error' or 'success'or 'warning'
+        duration = 3000
+    })
+    return contract
 end)
 
 ---Function Called with the new owner accepts the contract
 ---@param source string
 ---@param data Contract
 ---@return boolean,string?
-lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
+RegisterNetEvent(NAME .. "::server::newOwnerSigned", function(source, data)
     if not currentContracts[data.currentOwnerId] then
-        return false, "No contract found."
+        return
     end
     local contract = currentContracts[data.currentOwnerId]
-    contract.role = "newOwner"
+    -- MODIFY HERE THE VEHICLE OWNER IN THE DATABASE AND UPDATE THE KEYS
     TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
         title = "Contract Accepted",
         description = "The new owner has accepted the contract.",
         type = 'success', --'inform' or 'error' or 'success'or 'warning'
         duration = 3000
     })
-    --https://overextended.dev/ox_lib/Modules/Interface/Client/notify#libnotify
     TriggerClientEvent('ox_lib:notify', contract.newOwnerId, {
         title = "Contract Accepted",
         description = "You are now the owner of the vehicle.",
@@ -79,6 +120,4 @@ lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
         duration = 3000
     })
     contract = nil
-
-    return true
 end)
