@@ -28,13 +28,19 @@ RegisterCommand("contract", function(source, args, rawCommand)
     for k, v in pairs(vehicle) do
         options[#options + 1] = {
             title = ("%s %s"):format(v.brand, v.model),
-            description = ("Plate: %s \n Mileage: %s"):format(v.plate, v.mileage),
-            icon = "car",
-            value = v.plate,
-            plate = v.plate,
-            mileage = v.mileage,
-            brand = v.brand,
-            model = v.model
+            description = ("Plate: %s \n Mileage: %s \n Brand: %s \n Model: %s"):format(v.plate, v.mileage, v.brand, v.model),
+            icon = "fa car",
+            args = {
+                id = v.id,
+                plate = v.plate,
+                mileage = v.mileage,
+                brand = v.brand,
+                model = v.model
+            },
+            onSelect = function(data, cb)
+                local vehicle = data.args
+                
+            end
         }
     end
     lib.registerContext({
