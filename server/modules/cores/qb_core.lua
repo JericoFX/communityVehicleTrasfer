@@ -1,6 +1,6 @@
 local Core = lib.class("qb-core")
 local db = require "server.modules.database.qb_core"
-function Core:constructor()
+function Core:load()
     self.name = "qb-core"
     self.core = exports["qb-core"]:GetCoreObject()
     self.private.db = db
@@ -33,10 +33,5 @@ function Core:GetVehicleInformation(source, plate)
     return information
 end
 
-function Core:GetAllVehicles(source)
-    local player = self.GetPlayerData(source, "citizenid")
-    local vehicles = db.GetAllVehicles(player)
-    return #vehicles > 0 and vehicles or nil
-end
-
+Core:load()
 return Core

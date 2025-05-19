@@ -1,30 +1,6 @@
 ---@author JericoFX
 ---@version 0.1.0
-
-
---#region Class
----@class Contract
----@field source string The current owner's id (not in data table, passed separately)
----@field currentOwner string The current owner's name
----@field currentOwnerId string The current owner's ID
----@field currentOwnerName string The current owner's full name
----@field currentOwnerCitizenID string The current owner's citizen ID
----@field newOwner string The new owner's name
----@field newOwnerId string | number The new owner's ID
----@field newOwnerName string The new owner's full name
----@field newOwnerCitizenID string The new owner's citizen ID
----@field role string The role in the contract
----@field currenOwnerSign boolean Whether the current owner has signed
----@field newOwnerSign boolean Whether the new owner has signed
----@field vehicle table The vehicle information
----@field vehicle.brand string The vehicle's brand
----@field vehicle.model string The vehicle's model
----@field vehicle.plate string The vehicle's plate number
----@field vehicle.mileage number The vehicle's mileage
---#endregion
-
-
-
+---@
 local Framework = GetResourceState('qb-core') == "started" and require "server.modules.qb_core" or
     GetResourceState('es_extended') == "started" and require "server.modules.es_extended" or nil
 local currentContracts = {}
@@ -101,23 +77,40 @@ end)
 ---@param source string
 ---@param data Contract
 ---@return boolean,string?
-RegisterNetEvent(NAME .. "::server::newOwnerSigned", function(source, data)
+lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
     if not currentContracts[data.currentOwnerId] then
-        return
+        return false, "No contract found."
     end
     local contract = currentContracts[data.currentOwnerId]
     -- MODIFY HERE THE VEHICLE OWNER IN THE DATABASE AND UPDATE THE KEYS
-    TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
-        title = "Contract Accepted",
-        description = "The new owner has accepted the contract.",
-        type = 'success', --'inform' or 'error' or 'success'or 'warning'
-        duration = 3000
-    })
-    TriggerClientEvent('ox_lib:notify', contract.newOwnerId, {
-        title = "Contract Accepted",
-        description = "You are now the owner of the vehicle.",
-        type = 'success', --'inform' or 'error' or 'success'or 'warning'
-        duration = 3000
-    })
+    local success = Framework:ChangeVehicleOwner(contract.newOwnerCitizenID, contract.vehicle.plate)
+    if not success then
+        return false, "Failed to change vehicle owner."
+    end
+
+    if success then
+        print('Vehicle ownership transferred!')
+        TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
+            title = "Contract Accepted",
+            description = "The new owner has accepted the contract.",
+            type = 'success', --'inform' or 'error' or 'success'or 'warning'
+            duration = 3000
+        })
+        TriggerClientEvent('ox_lib:notify', contract.newOwnerId, {
+            title = "Contract Accepted",
+            description = "You are now the owner of the vehicle.",
+            type = 'success', --'inform' or 'error' or 'success'or 'warning'
+            duration = 3000
+        })
+    else
+        print('Transfer failed.')
+        TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
+            title = "Contract Error",
+            description = "The new owner has not accepted the contract.",
+            type = 'error', --'inform' or 'error' or 'success'or 'warning'
+            duration = 3000
+        })
+    end
     contract = nil
+    return true
 end)

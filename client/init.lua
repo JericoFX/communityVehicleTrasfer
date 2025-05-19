@@ -1,6 +1,5 @@
 lib.locale()
-local NAME            = GetCurrentResourceName()
-local currentContract = {}
+local NAME = GetCurrentResourceName()
 
 local function openNUI(data, boolean)
     local contract = {}
