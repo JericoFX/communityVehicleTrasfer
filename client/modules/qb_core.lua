@@ -1,3 +1,7 @@
-local QBCore = nil
+local Core = lib.class("qb-core")
 
-return QBCore
+function Core:load()
+    self.core = exports["qb-core"]:GetPlayerData()
+end
+
+Core:load()
