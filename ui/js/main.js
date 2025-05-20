@@ -1,30 +1,36 @@
 $(document).ready(function () {
-  const lang = getUserLang();
-  let t = null;
   let contract = {};
 
-  // onLoad logic
-  $('#seal').attr('src', contractConfig.sealUrl);
-  $('#title').text(t.title);
-  $('#subtitle').text(t.subtitle);
-  $('#legalText').text(t.legalText);
-  $('#ownerInfoHeader').text(t.ownerInfoHeader);
-  $('#labelFirstName').text(t.labelFirstName);
-  $('#labelLastName').text(t.labelLastName);
-  $('#vehicleDetailsHeader').text(t.vehicleDetailsHeader);
-  $('#labelPlate').text(t.labelPlate);
-  $('#labelModel').text(t.labelModel);
-  $('#labelColor').text(t.labelColor);
-  $('#transferHeader').text(t.transferHeader);
-  $('#labelNewOwner').text(t.labelNewOwner);
-  $('#signaturesHeader').text(t.signaturesHeader);
-  $('#labelCurrentSignature').text(t.labelCurrentSignature);
-  $('#labelNewSignature').text(t.labelNewSignature);
-  $('#cancelBtn').text(t.cancelBtn);
-  $('#submitBtn').text(t.submitBtn);
-  $('#labelDate').text(t.labelDate);
-  $('#labelNewOwnerId').text(t.labelNewOwnerId);
-  $('#labelNewOwnerCitizenID').text(t.labelNewOwnerCitizenID);
+  // --- AUTO DEBUG MODE FOR BROWSER ---
+  // Si no estamos en FiveM, inicializa con datos de ejemplo para debug
+  if (!window.invokeNative && !window.GetParentResourceName) {
+    // Detecta idioma del navegador
+    const browserLang = navigator.language?.slice(0, 2) || 'en';
+
+    // Usa config global si existe, si no, crea uno de ejemplo
+    const contractData =
+      typeof contractConfig !== 'undefined'
+        ? contractConfig.prefill
+        : {
+            firstName: 'Debug',
+            lastName: 'User',
+            plate: 'TEST123',
+            model: 'DebugCar',
+            color: 'Blue',
+            newOwner: 'Debug Owner',
+            newOwnerId: '99',
+            newOwnerCitizenID: '00000000',
+            currentRole: 'currentOwner',
+          };
+
+    // Rellena los campos de input
+    Object.entries(contractData).forEach(([key, value]) => {
+      $(`[name="${key}"]`).val(value);
+    });
+
+    // Muestra el UI
+    $('body').fadeIn(200);
+  }
 
   // Función para mostrar/ocultar el UI con animación
   function toggleUI(show) {
@@ -36,7 +42,10 @@ $(document).ready(function () {
   }
 
   // Deshabilita la firma del newOwner si el rol no corresponde
-  if ($('[name="currentRole"]').val() !== contractConfig.prefill.currentRole) {
+  if (
+    typeof contractConfig !== 'undefined' &&
+    $('[name="currentRole"]').val() !== contractConfig.prefill.currentRole
+  ) {
     $('[data-sign-for="newOwner"]').addClass('disabled');
   }
 
@@ -50,8 +59,6 @@ $(document).ready(function () {
     }
     switch (action) {
       case 'open':
-        const lang = getUserLang(data.language);
-        t = translations[lang];
         location.reload();
         fillContractFields(data);
         contract = data;
@@ -59,7 +66,7 @@ $(document).ready(function () {
         break;
       case 'close':
         $.post(
-          `https://${GetCurrentResourceName()}/close`,
+          `https://${GetParentResourceName()}/close`,
           JSON.stringify({}),
           function (response) {
             if (response.status === 'ok') {
@@ -112,7 +119,7 @@ $(document).ready(function () {
       ) {
         $.post(
           `https://${GetCurrentResourceName()}/error`,
-          JSON.stringify(t.notifications.cannotSignTwice),
+          JSON.stringify('The current owner cannot sign as the new owner.'),
           function (response) {
             if (response.status === 'ok') {
               location.reload();

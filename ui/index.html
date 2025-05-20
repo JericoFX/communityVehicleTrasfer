@@ -3,67 +3,93 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vehicle Transfer Contract</title>
-    <!-- Preload and load signature font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="app.css" />
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.min.js"
+      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+      crossorigin="anonymous"
+    ></script>
   </head>
-  <body>
+  <body style="display: none">
     <div class="contract-container">
       <div class="header">
-        <img id="seal" alt="Seal" />
-        <h2 id="title"></h2>
-        <p id="subtitle"></p>
-        <p class="legal-text" id="legalText"></p>
+        <img
+          id="seal"
+          alt="Seal"
+          src="https://upload.wikimedia.org/wikipedia/commons/5/5c/Great_Seal_of_the_United_States_%28obverse%29.svg"
+        />
+        <h2 id="title">Vehicle Transfer</h2>
+        <p id="subtitle">Official form</p>
+        <p class="legal-text" id="legalText">
+          By signing this contract, the current owner hereby transfers all
+          rights, title, and interest in the described vehicle to the new owner.
+          Both parties acknowledge that the information provided is accurate and
+          agree to abide by all applicable laws and regulations regarding
+          vehicle ownership transfer. This agreement is binding and effective
+          upon the signatures of both parties.
+        </p>
       </div>
       <div class="section">
-        <h3 id="ownerInfoHeader"></h3>
-        <div class="grid-two">
+        <h3 id="ownerInfoHeader">Current Owner Information</h3>
+        <div class="grid-three">
           <div class="field">
-            <label for="firstName" id="labelFirstName"></label>
+            <label for="firstName" id="labelFirstName">First Name</label>
             <input type="text" id="firstName" name="firstName" />
           </div>
           <div class="field">
-            <label for="lastName" id="labelLastName"></label>
+            <label for="lastName" id="labelLastName">Last Name</label>
             <input type="text" id="lastName" name="lastName" />
+          </div>
+          <div class="field">
+            <label for="currentOwnerCitizenID" id="labelCurrentOwnerCitizenID"
+              >Current Owner Citizen ID</label
+            >
+            <input
+              type="text"
+              id="currentOwnerCitizenID"
+              name="currentOwnerCitizenID"
+            />
           </div>
         </div>
       </div>
       <div class="section">
-        <h3 id="vehicleDetailsHeader"></h3>
+        <h3 id="vehicleDetailsHeader">Vehicle Details</h3>
         <div class="grid-three">
           <div class="field">
-            <label for="plate" id="labelPlate"></label>
+            <label for="plate" id="labelPlate">Plate</label>
             <input type="text" id="plate" name="plate" />
           </div>
           <div class="field">
-            <label for="model" id="labelModel"></label>
+            <label for="model" id="labelModel">Model</label>
             <input type="text" id="model" name="model" />
           </div>
-
           <div class="field">
-            <label for="color" id="labelColor"></label>
+            <label for="color" id="labelColor">Color</label>
             <input type="text" id="color" name="color" />
           </div>
         </div>
       </div>
       <div class="section">
-        <h3 id="transferHeader"></h3>
+        <h3 id="transferHeader">New Owner Information</h3>
         <div class="grid-three">
           <div class="field">
-            <label for="newOwner" id="labelNewOwner"></label>
+            <label for="newOwner" id="labelNewOwner">New Owner Name</label>
             <input type="text" id="newOwner" name="newOwner" />
           </div>
           <div class="field">
-            <label for="newOwnerId" id="labelNewOwnerId"></label>
+            <label for="newOwnerId" id="labelNewOwnerId">New Owner ID</label>
             <input type="text" id="newOwnerId" name="newOwnerId" />
           </div>
           <div class="field">
-            <label for="newOwnerCitizenID" id="labelNewOwnerCitizenID"></label>
+            <label for="newOwnerCitizenID" id="labelNewOwnerCitizenID"
+              >New Owner Citizen ID</label
+            >
             <input
               type="text"
               id="newOwnerCitizenID"
@@ -73,21 +99,20 @@
         </div>
       </div>
       <div class="section">
-        <h3 id="signaturesHeader"></h3>
+        <h3 id="signaturesHeader">Signatures</h3>
         <div class="grid-two">
           <div class="field">
-            <label id="labelCurrentSignature"></label>
+            <label id="labelCurrentSignature">Current Owner Signature</label>
             <div
               class="signature-field"
               data-role="sign"
               data-sign-for="currentOwner"
             ></div>
           </div>
-
           <div class="field">
-            <label id="labelNewSignature"></label>
+            <label id="labelNewSignature">New Owner Signature</label>
             <div
-              class="signature-field"
+              class="signature-field disabled"
               data-role="sign"
               data-sign-for="newOwner"
             ></div>
@@ -95,13 +120,9 @@
         </div>
       </div>
       <div class="controls">
-        <button id="cancelBtn"></button>
-        <button id="submitBtn"></button>
+        <button type="button" id="cancelBtn">Cancel</button>
       </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/i18n.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>

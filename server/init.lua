@@ -23,7 +23,7 @@ end)
 
 --- This function is called when a player starts a new contract.
 ---@param source string
----@param data Contract
+---@param data table
 ---@return boolean,string?
 lib.callback.register(NAME .. "::server::startNewContract", function(source, data)
     local Player, Target = Framework:GetPlayer(source), Framework:GetPlayer(data.newOwnerId)
@@ -50,9 +50,6 @@ lib.callback.register(NAME .. "::server::startNewContract", function(source, dat
         newOwnerSign = false,
         vehicle = checkVehicleForPlate
     }
-
-    -- CHECK INFO OF BOTH PLAYERS, FILL THE CURRENTCONTRACT TABLE, CHECK THE VEHICLES AND SEND BACK TO LUA
-    --TriggerClientEvent(NAME .. "::client::startNewContract", data.newOwnerId, currentContracts[source])
     return currentContracts[source]
 end)
 
