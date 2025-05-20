@@ -1,6 +1,6 @@
 local db = {}
 local QUERY <const> = {
-    GetVehicleInformation = "SELECT * FROM player_vehicles WHERE citizenid = ? AND plate = ?",
+    GetVehicleInformation = "SELECT plate,vehicle FROM player_vehicles WHERE citizenid = ? AND plate = ?",
     GetAllVehicles = "SELECT * FROM player_vehicles WHERE citizenid = ?",
     ChangeVehicleOwner = "UPDATE player_vehicles SET citizenid = ? WHERE plate = ?",
 }

@@ -52,14 +52,11 @@ lib.callback.register(NAME .. "::server::startNewContract", function(source, dat
     end
 
     currentContracts[source] = {
-        source = source,
         currentOwner = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname,
-        currentOwnerId = Player.PlayerData.citizenid,
-        currentOwnerName = Player.PlayerData.name,
+        currentOwnerId = Player.PlayerData.source,
         currentOwnerCitizenID = Player.PlayerData.citizenid,
         newOwner = Target.PlayerData.charinfo.firstname .. " " .. Target.PlayerData.charinfo.lastname,
         newOwnerId = Target.PlayerData.source,
-        newOwnerName = Target.PlayerData.name,
         newOwnerCitizenID = Target.PlayerData.citizenid,
         role = "currentOwner",
         currenOwnerSign = false,
@@ -88,7 +85,7 @@ end)
 
 ---Function Called with the new owner accepts the contract
 ---@param source string
----@param data table 
+---@param data table
 ---@return boolean,string?
 lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
     if not currentContracts[data.currentOwnerId] then
