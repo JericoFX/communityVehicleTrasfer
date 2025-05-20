@@ -1,8 +1,24 @@
 ---@author JericoFX
 ---@version 0.1.0
 ---@
-local Framework = GetResourceState('qb-core') == "started" and require "server.modules.qb_core" or
-    GetResourceState('es_extended') == "started" and require "server.modules.es_extended" or nil
+local function LoadFramework()
+    local hasQBCore = GetResourceState('qb-core') == "started"
+    local hasQBXCore = GetResourceState('qbx_core') == "started"
+    local hasESExtended = GetResourceState('es_extended') == "started"
+
+    -- Si qbx_core está activo y qb-core NO está activo, es qbx_core
+    if hasQBXCore and not hasQBCore then
+        return require "server.modules.qbx_core"
+    elseif hasQBCore then
+        return require "server.modules.qb_core"
+    elseif hasESExtended then
+        return require "server.modules.es_extended"
+    else
+        return nil
+    end
+end
+
+local Framework = LoadFramework()
 local currentContracts = {}
 local NAME = ("%s::"):format(GetCurrentResourceName())
 
