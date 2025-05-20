@@ -24,7 +24,7 @@ local NAME = ("%s::"):format(GetCurrentResourceName())
 
 
 if not Framework then
-    print("Framework not found, please check if you have qb-core or es_extended installed.")
+    print("Framework not found, please check if you have qb-core,qbx_core or es_extended installed.")
     return
 end
 
@@ -88,7 +88,7 @@ end)
 
 ---Function Called with the new owner accepts the contract
 ---@param source string
----@param data Contract
+---@param data table 
 ---@return boolean,string?
 lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
     if not currentContracts[data.currentOwnerId] then
