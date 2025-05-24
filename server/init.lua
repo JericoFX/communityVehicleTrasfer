@@ -1,26 +1,28 @@
 ---@author JericoFX
 ---@version 0.1.0
----@
 local function LoadFramework()
     local hasQBCore = GetResourceState('qb-core') == "started"
-    local hasQBXCore = GetResourceState('qbx_core') == "started"
-    local hasESExtended = GetResourceState('es_extended') == "started"
+    -- local hasQBXCore = GetResourceState('qbx_core') == "started"
+    -- local hasESExtended = GetResourceState('es_extended') == "started"
 
-    -- Si qbx_core está activo y qb-core NO está activo, es qbx_core
-    if hasQBXCore and not hasQBCore then
-        return require "server.modules.qbx_core"
-    elseif hasQBCore then
-        return require "server.modules.qb_core"
-    elseif hasESExtended then
-        return require "server.modules.es_extended"
-    else
-        return nil
-    end
+    -- -- Si qbx_core está activo y qb-core NO está activo, es qbx_core
+    -- if hasQBXCore and not hasQBCore then
+    --     return require "server.modules.qbx_core"
+    -- elseif hasQBCore then
+    --     return require "server.modules.qb_core"
+    -- elseif hasESExtended then
+    --     return require "server.modules.es_extended"
+    -- else
+    --     return nil
+    -- end
+    return require "server.modules.qb_core"
 end
 
-local Framework = LoadFramework()
+local Contract = require "server.modules.contract.contract"
+
+Framework = LoadFramework()
 local currentContracts = {}
-local NAME = ("%s::"):format(GetCurrentResourceName())
+
 
 
 if not Framework then
@@ -28,12 +30,7 @@ if not Framework then
     return
 end
 
-
-lib.callback.register(NAME .. "::server::getContracts", function()
-    return currentContracts
-end)
-
-lib.callback.register(NAME .. "::server::getVehicle", function(source)
+lib.callback.register("orderVehicleTransfer::server::getVehicle", function(source)
     return Framework:GetAllVehicles(source)
 end)
 
@@ -41,7 +38,7 @@ end)
 ---@param source string
 ---@param data table
 ---@return boolean,string?
-lib.callback.register(NAME .. "::server::startNewContract", function(source, data)
+lib.callback.register("orderVehicleTransfer::server::startNewContract", function(source, data)
     local Player, Target = Framework:GetPlayer(source), Framework:GetPlayer(data.newOwnerId)
     if not Player or not Target then
         return false, "Player not found."
@@ -50,8 +47,7 @@ lib.callback.register(NAME .. "::server::startNewContract", function(source, dat
     if not checkVehicleForPlate then
         return false, "Vehicle not found."
     end
-
-    currentContracts[source] = {
+    currentContracts[source] = Contract:New(source, {
         currentOwner = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname,
         currentOwnerId = Player.PlayerData.source,
         currentOwnerCitizenID = Player.PlayerData.citizenid,
@@ -62,24 +58,17 @@ lib.callback.register(NAME .. "::server::startNewContract", function(source, dat
         currenOwnerSign = false,
         newOwnerSign = false,
         vehicle = checkVehicleForPlate
-    }
+    })
     return currentContracts[source]
 end)
 
 
-lib.callback.register(NAME .. "::server::currentOwnerSigned", function(source, data)
+lib.callback.register("orderVehicleTransfer::server::currentOwnerSigned", function(source, data)
     if not currentContracts[source] then
         return false, "No contract found."
     end
     local contract = currentContracts[source]
-    contract.role = "newOwner"
-    contract.currenOwnerSign = true
-    TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
-        title = "Contract Accepted",
-        description = "You have accepted the contract.",
-        type = 'success', --'inform' or 'error' or 'success'or 'warning'
-        duration = 3000
-    })
+    contract:CurrentOwnerSigned()
     return contract
 end)
 
@@ -87,40 +76,82 @@ end)
 ---@param source string
 ---@param data table
 ---@return boolean,string?
-lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
-    if not currentContracts[data.currentOwnerId] then
-        return false, "No contract found."
-    end
+lib.callback.register("orderVehicleTransfer::server::newOwnerSigned", function(source, data)
     local contract = currentContracts[data.currentOwnerId]
-    -- MODIFY HERE THE VEHICLE OWNER IN THE DATABASE AND UPDATE THE KEYS
+    if not ValidateContract(contract, data) then
+        return false, GetValidationError(contract, data)
+    end
+
     local success = Framework:ChangeVehicleOwner(contract.newOwnerCitizenID, contract.vehicle.plate)
     if not success then
         return false, "Failed to change vehicle owner."
     end
 
-    if success then
-        print('Vehicle ownership transferred!')
-        TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
-            title = "Contract Accepted",
-            description = "The new owner has accepted the contract.",
-            type = 'success', --'inform' or 'error' or 'success'or 'warning'
-            duration = 3000
-        })
-        TriggerClientEvent('ox_lib:notify', contract.newOwnerId, {
-            title = "Contract Accepted",
-            description = "You are now the owner of the vehicle.",
-            type = 'success', --'inform' or 'error' or 'success'or 'warning'
-            duration = 3000
-        })
-    else
-        print('Transfer failed.')
-        TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
-            title = "Contract Error",
-            description = "The new owner has not accepted the contract.",
-            type = 'error', --'inform' or 'error' or 'success'or 'warning'
-            duration = 3000
-        })
-    end
+    NotifyParties(contract, success)
+
+    contract:Delete(data.currentOwnerId)
+    currentContracts[data.currentOwnerId] = nil
     contract = nil
+
     return true
 end)
+
+-- Helper functions
+function ValidateContract(contract, data)
+    if not contract then return false end
+    if not contract.newOwnerSign then return false end
+    if contract.role ~= "newOwner" then return false end
+    if contract.currentOwnerCitizenID ~= data.currentOwnerCitizenID then return false end
+    if contract.newOwnerCitizenID ~= data.newOwnerCitizenID then return false end
+    if contract.vehicle.plate ~= data.vehicle.plate then return false end
+    if not contract:NewOwnerSigned() then return false end
+    return true
+end
+
+function GetValidationError(contract, data)
+    if not contract then return "No contract found." end
+    if not contract.newOwnerSign then return "New owner has not signed the contract yet." end
+    if contract.role ~= "newOwner" then return "You are not the new owner." end
+    if contract.currentOwnerCitizenID ~= data.currentOwnerCitizenID then
+        return
+        "Current owner citizen ID does not match."
+    end
+    if contract.newOwnerCitizenID ~= data.newOwnerCitizenID then return "New owner citizen ID does not match." end
+    if contract.vehicle.plate ~= data.vehicle.plate then return "Vehicle plate does not match." end
+    if not contract:NewOwnerSigned() then return "New owner has not signed the contract." end
+    return "Unknown error occurred."
+end
+
+function NotifyParties(contract, success)
+    if success then
+        NotifySuccess(contract)
+    else
+        NotifyError(contract)
+        print('Transfer failed.')
+    end
+end
+
+function NotifySuccess(contract)
+    TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
+        title = "Contract Accepted",
+        description = "The new owner has accepted the contract.",
+        type = 'success',
+        duration = 3000
+    })
+
+    TriggerClientEvent('ox_lib:notify', contract.newOwnerId, {
+        title = "Contract Accepted",
+        description = "You are now the owner of the vehicle.",
+        type = 'success',
+        duration = 3000
+    })
+end
+
+function NotifyError(contract)
+    TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
+        title = "Contract Error",
+        description = "The new owner has not accepted the contract.",
+        type = 'error',
+        duration = 3000
+    })
+end

@@ -1,6 +1,6 @@
 lib.locale()
-local NAME = GetCurrentResourceName()
 
+local QBCore = exports['qb-core']:GetCoreObject()
 local function openNUI(data, boolean)
     local contract = {}
 
@@ -37,7 +37,7 @@ local function newContract(_data)
         vehicle = vehicle,
         plate = GetVehicleNumberPlateText(vehicle),
     }
-    local information, error = lib.callback.await(NAME .. "::server::startNewContract", false, temp)
+    local information, error = lib.callback.await("orderVehicleTransfer::server::startNewContract", false, temp)
     if not information then
         lib.notify({
             title = "Error",
@@ -79,7 +79,6 @@ RegisterNUICallback("cancel", function(data, cb)
 end)
 
 RegisterNUICallback("error", function(data, cb)
-    --https://overextended.dev/ox_lib/Modules/Interface/Client/notify#libnotify
     lib.notify({
         title = "ERROR",
         description = data,
@@ -90,7 +89,7 @@ RegisterNUICallback("error", function(data, cb)
 end)
 
 --#endregion
-RegisterNetEvent(NAME .. "::client::setNewOwnerSign", setNewOwnerSign)
+RegisterNetEvent("orderVehicleTransfer::client::signNewOwner", setNewOwnerSign)
 
 CreateThread(function()
     exports.ox_target:addGlobalPed({

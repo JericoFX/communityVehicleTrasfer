@@ -33,5 +33,21 @@ function Core:GetVehicleInformation(source, plate)
     return information
 end
 
+function Core:ChangeVehicleOwner(source, plate, newOwner)
+    local player = self.GetPlayerData(source, "citizenid")
+    local vehicle = db.GetVehicleInformation(player, plate)
+    if not vehicle then
+        return false, "Vehicle not found."
+    end
+    if vehicle.citizenid == newOwner then
+        return false, "You cannot transfer ownership to yourself."
+    end
+    local success = db.ChangeVehicleOwner(newOwner, plate)
+    if not success then
+        return false, "Failed to change vehicle owner."
+    end
+    return true
+end
+
 Core:load()
 return Core
