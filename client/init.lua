@@ -2,14 +2,11 @@ lib.locale()
 
 local QBCore = exports['qb-core']:GetCoreObject()
 local function openNUI(data, boolean)
-    local contract = {}
-
     SetNuiFocus(boolean, boolean)
     SendNUIMessage({
         action = boolean and "open" or "close",
         data = {
-            contract = data or nil,
-            locale = config.language
+            contract = data or nil
         }
     })
 end
