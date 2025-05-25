@@ -59,36 +59,41 @@ $(document).ready(function () {
     }
     switch (action) {
       case 'open':
-        location.reload();
-        fillContractFields(data);
-        contract = data;
+        // Reset UI state
+        $('.signature-field').removeClass('signed disabled').text('');
+        $('input').prop('readonly', false);
+        
+        // Fill contract data
+        if (data && data.contract) {
+          fillContractFields(data.contract);
+          contract = data.contract;
+          
+          // Configure UI based on role
+          if (contract.role === 'currentOwner') {
+            // Current owner can sign, new owner cannot yet
+            $('[data-sign-for="currentOwner"]').removeClass('disabled');
+            $('[data-sign-for="newOwner"]').addClass('disabled');
+          } else if (contract.role === 'newOwner') {
+            // Make all inputs readonly for new owner
+            $('input').prop('readonly', true);
+            // Current owner already signed, new owner can sign
+            $('[data-sign-for="currentOwner"]').addClass('disabled signed').text(contract.currentOwner);
+            $('[data-sign-for="newOwner"]').removeClass('disabled');
+          }
+        }
+        
         toggleUI(true);
         break;
       case 'close':
         $.post(
           `https://${GetParentResourceName()}/close`,
           JSON.stringify({}),
-          function (response) {
-            if (response.status === 'ok') {
-              location.reload();
-            } else {
-              console.log('Error:', response.error);
-            }
+          function () {
+            // UI will be closed by client
           }
         );
         contract = {};
         toggleUI(false);
-        break;
-      case 'openForNewOwner':
-        fillContractFields(data);
-        // Hace todos los inputs readonly
-        $('input').prop('readonly', true);
-        // Oculta el botón submit
-        $('#submitBtn').hide();
-        // Solo permite firmar al newOwner
-        $('[data-sign-for="newOwner"]').removeClass('disabled');
-        $('[data-sign-for="currentOwner"]').addClass('disabled');
-        toggleUI(true);
         break;
     }
   });
@@ -96,133 +101,123 @@ $(document).ready(function () {
   // Firma
   $('[data-role="sign"]').on('click', function () {
     const role = $(this).data('sign-for');
+    
+    if ($(this).hasClass('disabled')) {
+      return; // No permitir firmar si está deshabilitado
+    }
+    
     let name = '';
+    
     if (role === 'currentOwner') {
       name = $('#firstName').val() + ' ' + $('#lastName').val();
-      contract.currentOwnerSigned = true;
-      $.post(
-        `https://${GetCurrentResourceName()}/currentOwnerSigned`,
-        JSON.stringify({ contract }),
-        function () {
-          toggleUI(false);
-        }
-      );
-      return;
-    } else if (role === 'newOwner') {
-      // Seguridad: Evita que el current owner firme como new owner
-      const currentOwnerName =
-        $('#firstName').val() + ' ' + $('#lastName').val();
-      const newOwnerName = $('#newOwner').val();
-      if (
-        currentOwnerName.trim().toLowerCase() ===
-        newOwnerName.trim().toLowerCase()
-      ) {
+      
+      if (!name.trim()) {
         $.post(
           `https://${GetCurrentResourceName()}/error`,
-          JSON.stringify('The current owner cannot sign as the new owner.'),
-          function (response) {
-            if (response.status === 'ok') {
-              location.reload();
-            } else {
-              console.log('Error:', response.error);
-            }
-          }
+          JSON.stringify('Nombre requerido para firmar'),
+          function () {}
         );
         return;
       }
-      name = newOwnerName;
-      // Firma y envía automáticamente el contrato
+      
+      // Marcar como firmado visualmente
       $(this).addClass('signed').text(name);
-
-      const values = {};
-      $('input').each(function () {
-        values[this.name] = $(this).val();
-      });
+      
+      // Enviar firma al servidor
       $.post(
-        `https://${GetCurrentResourceName()}/submitContract`,
-        JSON.stringify(values),
-        function (response) {
-          if (response.status === 'ok') {
-            toggleUI(false);
-          } else {
-            console.log('Error:', response.error);
-          }
+        `https://${GetCurrentResourceName()}/CurrentOwnerSigned`,
+        JSON.stringify(contract),
+        function () {
+          // El cliente manejará el cierre del UI
         }
       );
       return;
-    }
-    if (name) {
+      
+    } else if (role === 'newOwner') {
+      name = $('#newOwner').val();
+      
+      if (!name.trim()) {
+        $.post(
+          `https://${GetCurrentResourceName()}/error`,
+          JSON.stringify('Nombre del nuevo propietario requerido para firmar'),
+          function () {}
+        );
+        return;
+      }
+      
+      // Seguridad: Evita que el current owner firme como new owner
+      const currentOwnerName = $('#firstName').val() + ' ' + $('#lastName').val();
+      if (currentOwnerName.trim().toLowerCase() === name.trim().toLowerCase()) {
+        $.post(
+          `https://${GetCurrentResourceName()}/error`,
+          JSON.stringify('El propietario actual no puede firmar como nuevo propietario'),
+          function () {}
+        );
+        return;
+      }
+      
+      // Marcar como firmado visualmente
       $(this).addClass('signed').text(name);
-      updateSubmitButtonState();
-    } else {
-      alert(
-        t.labelFirstName + ' ' + t.labelLastName + ' ' + 'required to sign'
+      
+      // Enviar firma al servidor
+      $.post(
+        `https://${GetCurrentResourceName()}/NewOwnerSigned`,
+        JSON.stringify(contract),
+        function () {
+          // El cliente manejará el cierre del UI
+        }
       );
+      return;
     }
   });
 
   // Cancelar
   $('#cancelBtn').on('click', function () {
-    $('input').val('');
-    $('.signature-field').removeClass('signed').text('');
-    location.reload();
-  });
-
-  // Submit (solo para casos legacy, normalmente no se usará con este flujo)
-  /*  $('#submitBtn').on('click', function () {
-    const values = {};
-    $('input').each(function () {
-      values[this.name] = $(this).val();
-    });
-    const currentOwnerSigned = $(
-      '.signature-field[data-sign-for="currentOwner"]'
-    ).hasClass('signed');
-    const newOwnerSigned = $(
-      '.signature-field[data-sign-for="newOwner"]'
-    ).hasClass('signed');
-    if (!(currentOwnerSigned && newOwnerSigned)) {
-      $.post(
-        `https://${GetCurrentResourceName()}/error`,
-        JSON.stringify('Both signatures are required to transfer the vehicle')
-      );
-      return;
-    }
     $.post(
-      `https://${GetCurrentResourceName()}/submitContract`,
-      JSON.stringify(values),
-      function (response) {
-        if (response.status === 'ok') {
-          location.reload();
-        } else {
-          console.log('Error:', response.error);
-        }
+      `https://${GetCurrentResourceName()}/cancel`,
+      JSON.stringify(contract || {}),
+      function () {
+        // El cliente manejará el cierre del UI
       }
     );
-  }); */
+  });
 
-  // Habilita/deshabilita el submit según firmas (legacy)
-  function updateSubmitButtonState() {
-    const currentOwnerSigned = $(
-      '.signature-field[data-sign-for="currentOwner"]'
-    ).hasClass('signed');
-    const newOwnerSigned = $(
-      '.signature-field[data-sign-for="newOwner"]'
-    ).hasClass('signed');
-    $('#submitBtn').prop('disabled', !(currentOwnerSigned && newOwnerSigned));
-  }
 
-  // Llama al cargar la página
-  updateSubmitButtonState();
 });
 
 /**
  * Rellena los campos del contrato con los datos recibidos.
- * @param {Object} data - Objeto con los datos a rellenar (ej: { firstName: 'Juan', lastName: 'Pérez', ... })
+ * @param {Object} data - Objeto con los datos del contrato
  */
 function fillContractFields(data) {
-  Object.entries(data).forEach(([key, value]) => {
-    $(`[name="${key}"]`).val(value);
-  });
-  // Si necesitas actualizar otros elementos (no inputs), agrégalo aquí
-  // Por ejemplo: $('#labelFirstName').text(data.firstName);
+  if (!data) return;
+  
+  // Parse names
+  const currentOwnerParts = data.currentOwner ? data.currentOwner.split(' ') : ['', ''];
+  const firstName = currentOwnerParts[0] || '';
+  const lastName = currentOwnerParts.slice(1).join(' ') || '';
+  
+  // Fill form fields
+  $('#firstName').val(firstName);
+  $('#lastName').val(lastName);
+  $('#currentOwnerCitizenID').val(data.currentOwnerCitizenID || '');
+  $('#newOwner').val(data.newOwner || '');
+  $('#newOwnerId').val(data.newOwnerId || '');
+  $('#newOwnerCitizenID').val(data.newOwnerCitizenID || '');
+  
+  // Vehicle information
+  if (data.vehicle) {
+    $('#plate').val(data.vehicle.plate || '');
+    $('#model').val(data.vehicle.vehicle || '');
+    $('#color').val(data.vehicle.color || 'N/A');
+  }
+  
+  // Update signature states if already signed
+  if (data.currentOwnerSigned) {
+    $('[data-sign-for="currentOwner"]').addClass('signed').text(data.currentOwner);
+  }
+  
+  if (data.newOwnerSigned) {
+    $('[data-sign-for="newOwner"]').addClass('signed').text(data.newOwner);
+  }
 }

@@ -1,26 +1,45 @@
 fx_version 'cerulean'
 games { 'rdr3', 'gta5' }
 author 'JericoFX for the Order!'
-description 'Order Vehicle Contract'
+description 'Order Vehicle Transfer Contract - Secure vehicle ownership transfer system'
 
-mod 'Order Vehicle Contract'
+name 'Order Vehicle Transfer Contract'
 version '1.0.0'
 
-client_scripts {
-    'client/init.lua',
+-- Dependencies
+dependencies {
+    'ox_lib',
+    'ox_target',
+    'oxmysql'
 }
-shared_script { "@ox_lib/init.lua", "config/init.lua" }
+
+-- Shared scripts
+shared_scripts {
+    '@ox_lib/init.lua',
+    'config/init.lua'
+}
+
+-- Client scripts
+client_scripts {
+    'client/init.lua'
+}
+
+-- Server scripts
 server_scripts {
     '@oxmysql/lib/MySQL.lua',
-    'server/init.lua',
+    'server/init.lua'
+}
 
-}
+-- UI
 ui_page 'ui/index.html'
+
+-- Files
 files {
-    'locales/*.json',
-    "ui/index.html",
-    "ui/app.css",
-    "ui/js/*.js",
-    "client/modules/*.lua",
+    'locale/*.json',
+    'ui/index.html',
+    'ui/app.css',
+    'ui/js/*.js'
 }
+
+-- Lua version
 lua54 'yes'
