@@ -28,9 +28,7 @@ local function newContract(_data)
         })
         return
     end
-    local temp = {
-
-    }
+    local temp = {}
     temp[cache.serverId] = {
         currentOwnerId = cache.serverId,
         newOwnerId = GetPlayerServerId(_data.entity),

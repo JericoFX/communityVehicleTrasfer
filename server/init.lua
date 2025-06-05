@@ -1,6 +1,7 @@
 ---@author JericoFX
 ---@version 0.1.0
 ---@
+local Config = require "server.config.init"
 local function LoadFramework()
     local hasQBCore = GetResourceState('qb-core') == "started"
     local hasQBXCore = GetResourceState('qbx_core') == "started"
@@ -112,6 +113,7 @@ lib.callback.register(NAME .. "::server::newOwnerSigned", function(source, data)
             type = 'success', --'inform' or 'error' or 'success'or 'warning'
             duration = 3000
         })
+        Config.VehicleKeys(contract.vehicle.plate)
     else
         print('Transfer failed.')
         TriggerClientEvent('ox_lib:notify', contract.currentOwnerId, {
