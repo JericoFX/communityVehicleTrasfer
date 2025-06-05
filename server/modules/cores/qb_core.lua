@@ -1,37 +1,61 @@
 local Core = lib.class("qb-core")
 local db = require "server.modules.database.qb_core"
+local inventory = require "server.modules.inventory.init"
+
 function Core:load()
     self.name = "qb-core"
     self.core = exports["qb-core"]:GetCoreObject()
     self.private.db = db
-end
-
-function Core:GetPlayerData(source, key)
-    local player = self.core.Functions.GetPlayer(source)
-    if player.PlayerData[key] then
-        return player.PlayerData[key]
-    end
-    return player
+    self.private.inventory = inventory
 end
 
 function Core:GetPlayerInformation(source)
+    local player = self.core.Functions.GetPlayer(source)
+    if not player then return nil end
+    
+    local charinfo = player.PlayerData.charinfo
+    if not charinfo then return nil end
+    
     return {
         source = source,
-        citizenid = self.GetPlayerData(source, "citizenid"),
-        fullName = self.GetPlayerData(source, "charinfo").firstname ..
-            " " .. self.GetPlayerData(source, "charinfo").lastname
+        citizenid = player.PlayerData.citizenid,
+        fullName = charinfo.firstname .. " " .. charinfo.lastname
     }
 end
 
-function Core:GetPlayerById(id)
-    return self.core.Functions.GetPlayerByCitizenId(id)
-end
-
-function Core:GetVehicleInformation(source, plate)
-    local player = self.GetPlayerData(source, "citizenid")
-    local information = db.GetVehicleInformation(player, plate)
+function Core:GetVehicleInformation(citizenid, plate)
+    local information = db.GetVehicleInformation(citizenid, plate)
     return information
 end
+
+function Core:ChangeVehicleOwner(newOwnerCitizenId, plate)
+    local success = db.ChangeVehicleOwner(newOwnerCitizenId, plate)
+    if not success then
+        return false, "Failed to change vehicle owner."
+    end
+    return true
+end
+
+function Core:GetPlayer(source)
+    return self.core.Functions.GetPlayer(source)
+end
+
+
+
+-- Funciones de inventario (usando sistema automático)
+function Core:AddItem(source, item, amount, metadata, slot)
+    return self.private.inventory.AddItem(source, item, amount, metadata, slot)
+end
+
+function Core:RemoveItem(source, item, amount, slot)
+    return self.private.inventory.RemoveItem(source, item, amount, slot)
+end
+
+function Core:HasItem(source, item, amount)
+    return self.private.inventory.HasItem(source, item, amount)
+end
+
+
 
 Core:load()
 return Core
