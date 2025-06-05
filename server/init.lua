@@ -8,8 +8,7 @@ lib.locale()
 local Contract = require "server.modules.contract.contract"
 local AntiExploit = require "server.modules.security.AntiExploit"
 
--- Initialize unified framework system (auto-detects framework and inventory)
-Framework = require "server.modules.cores.init"
+local Framework = require "server.modules.cores.init"
 
 -- Initialize security system
 local antiExploit = AntiExploit:new()
@@ -34,25 +33,25 @@ lib.callback.register("orderVehicleTransfer::server::startNewContract", function
             return nil, locale('need_blank_contract')
         end
     end
-    
+
     -- Get player information using unified API
     local currentOwnerInfo = Framework.GetPlayerInformation(source)
     local newOwnerInfo = Framework.GetPlayerInformation(contractData.newOwnerId)
-    
+
     if not currentOwnerInfo or not newOwnerInfo then
         return nil, locale('players_offline')
     end
-    
+
     -- Get vehicle information and verify ownership
     local vehicleInfo = Framework.GetVehicleInformation(
-        currentOwnerInfo.citizenid, 
+        currentOwnerInfo.citizenid,
         contractData.plate
     )
-    
+
     if not vehicleInfo then
         return nil, locale('vehicle_not_found')
     end
-    
+
     -- Prepare contract data
     local newContractData = {
         currentOwner = currentOwnerInfo.fullName,
@@ -64,14 +63,14 @@ lib.callback.register("orderVehicleTransfer::server::startNewContract", function
         vehicle = vehicleInfo,
         vehicleNetId = contractData.vehicleNetId
     }
-    
+
     -- Create new contract
     local contract = Contract:new(source, newContractData)
-    
+
     if not contract then
         return nil, locale('contract_creation_error')
     end
-    
+
     return contract:getClientData()
 end)
 
@@ -83,11 +82,11 @@ end)
 lib.callback.register("orderVehicleTransfer::server::currentOwnerSigned", function(source, contractData)
     -- Find the contract by ID
     local contract = Contract.GetById(contractData.id)
-    
+
     if not contract then
         return false, locale('contract_not_found')
     end
-    
+
     -- Verify the source matches the contract owner
     if contract.currentOwnerId ~= source then
         antiExploit:logSuspiciousActivity(source, "UNAUTHORIZED_CONTRACT_SIGN", {
@@ -96,14 +95,14 @@ lib.callback.register("orderVehicleTransfer::server::currentOwnerSigned", functi
         })
         return false, locale('unauthorized_sign')
     end
-    
+
     -- Process the signature
     local success, error = contract:getCurrentOwnerSign()
-    
+
     if not success then
         return false, error
     end
-    
+
     return true
 end)
 
@@ -114,11 +113,11 @@ end)
 lib.callback.register("orderVehicleTransfer::server::newOwnerSigned", function(source, contractData)
     -- Find the contract by ID
     local contract = Contract.GetById(contractData.id)
-    
+
     if not contract then
         return false, locale('contract_not_found')
     end
-    
+
     -- Verify the source matches the new owner
     if contract.newOwnerId ~= source then
         antiExploit:logSuspiciousActivity(source, "UNAUTHORIZED_CONTRACT_SIGN", {
@@ -127,10 +126,10 @@ lib.callback.register("orderVehicleTransfer::server::newOwnerSigned", function(s
         })
         return false, locale('unauthorized_sign')
     end
-    
+
     -- Process the signature and complete transfer
     local success, error = contract:getNewOwnerSign()
-    
+
     if not success then
         return false, "Failed to change vehicle owner."
     end
