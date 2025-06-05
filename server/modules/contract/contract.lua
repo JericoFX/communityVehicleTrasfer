@@ -17,34 +17,34 @@ function Contract:constructor(sourceId, contractData)
     if not isValid then
         return nil, error
     end
-    
+
     -- Security validations
     if not antiExploit:checkRateLimit(sourceId) then
         return nil, "Rate limit exceeded. Please wait before creating another contract."
     end
-    
+
     if not antiExploit:validateBothPlayersOnline(contractData.currentOwnerId, contractData.newOwnerId) then
         return nil, "Both players must be online to create a contract."
     end
-    
+
     if not antiExploit:preventSelfTransfer(contractData.currentOwnerId, contractData.newOwnerId) then
         return nil, "Cannot transfer vehicle to yourself."
     end
-    
+
     if not antiExploit:validatePlayerDistance(contractData.currentOwnerId, contractData.newOwnerId) then
         return nil, "Players are too far apart for vehicle transfer."
     end
-    
+
     if not antiExploit:validateVehicleOwnership(contractData.currentOwnerCitizenID, contractData.vehicle.plate) then
         return nil, "Vehicle ownership verification failed."
     end
-    
+
     -- Initialize contract
     self.id = self:generateContractId()
     self.sourceId = sourceId
     self.createdAt = os.time()
     self.status = "pending_current_owner" -- pending_current_owner, pending_new_owner, completed, cancelled, expired
-    
+
     -- Contract parties
     self.currentOwner = contractData.currentOwner
     self.currentOwnerId = contractData.currentOwnerId
@@ -52,34 +52,34 @@ function Contract:constructor(sourceId, contractData)
     self.newOwner = contractData.newOwner
     self.newOwnerId = contractData.newOwnerId
     self.newOwnerCitizenID = contractData.newOwnerCitizenID
-    
+
     -- Signatures
     self.currentOwnerSigned = false
     self.newOwnerSigned = false
     self.currentOwnerSignedAt = nil
     self.newOwnerSignedAt = nil
-    
+
     -- Vehicle information
     self.vehicle = contractData.vehicle
     self.vehicleNetId = contractData.vehicleNetId
-    
+
     -- Security data
     self.securityHash = self:generateSecurityHash()
     self.lastModified = os.time()
-    
+
     -- Store contract
     Contracts[self.id] = self
-    
+
     -- Set timeout timer
     self:setTimeoutTimer()
-    
+
     return self
 end
 
 function Contract:generateContractId()
     return ("%s-%s-%d"):format(
         self.currentOwnerCitizenID or "unknown",
-        self.newOwnerCitizenID or "unknown", 
+        self.newOwnerCitizenID or "unknown",
         os.time()
     )
 end
@@ -91,7 +91,7 @@ function Contract:generateSecurityHash()
         self.vehicle.plate,
         tostring(self.createdAt)
     }, "|")
-    
+
     local hash = 0
     for i = 1, #dataToHash do
         hash = hash + string.byte(dataToHash, i)
@@ -122,7 +122,7 @@ function Contract:getCurrentOwnerSign()
     if self.status ~= "pending_current_owner" then
         return false, "Contract is not in the correct state for current owner signing."
     end
-    
+
     if not self:validateSecurityHash() then
         antiExploit:logSuspiciousActivity(self.currentOwnerId, "CONTRACT_HASH_MISMATCH", {
             contractId = self.id,
@@ -130,17 +130,17 @@ function Contract:getCurrentOwnerSign()
         })
         return false, "Contract security validation failed."
     end
-    
+
     if not antiExploit:validateVehicleDistance(self.currentOwnerId, self.vehicleNetId) then
         return false, "You must be near the vehicle to sign the contract."
     end
-    
+
     -- Process signature
     self.currentOwnerSigned = true
     self.currentOwnerSignedAt = os.time()
     self.status = "pending_new_owner"
     self.lastModified = os.time()
-    
+
     -- Notify current owner
     TriggerClientEvent('ox_lib:notify', self.currentOwnerId, {
         title = locale('contract_signed'),
@@ -149,15 +149,15 @@ function Contract:getCurrentOwnerSign()
         duration = Config.notifications.duration,
         position = Config.notifications.position
     })
-    
+
     -- Send contract to new owner
     TriggerClientEvent("orderVehicleTransfer::client::signNewOwner", self.newOwnerId, self:getClientData())
-    
+
     -- Remove contract item if configured
     if Config.items.removeContractOnUse then
         Framework:RemoveItem(self.currentOwnerId, Config.items.blankContract, 1)
     end
-    
+
     return true
 end
 
@@ -166,11 +166,11 @@ function Contract:getNewOwnerSign()
     if self.status ~= "pending_new_owner" then
         return false, "Contract is not in the correct state for new owner signing."
     end
-    
+
     if not self.currentOwnerSigned then
         return false, "Current owner must sign first."
     end
-    
+
     if not self:validateSecurityHash() then
         antiExploit:logSuspiciousActivity(self.newOwnerId, "CONTRACT_HASH_MISMATCH", {
             contractId = self.id,
@@ -178,49 +178,59 @@ function Contract:getNewOwnerSign()
         })
         return false, "Contract security validation failed."
     end
-    
+
     if not antiExploit:validatePlayerDistance(self.currentOwnerId, self.newOwnerId) then
         return false, "Players are too far apart to complete the transfer."
     end
-    
+
     -- Process signature
     self.newOwnerSigned = true
     self.newOwnerSignedAt = os.time()
     self.status = "completed"
     self.lastModified = os.time()
-    
+
     -- Execute vehicle transfer
     local success, error = self:executeVehicleTransfer()
     if not success then
         self.status = "failed"
         return false, error
     end
-    
+
     -- Give signed contracts to both parties
     if Config.items.giveSignedContract then
         Framework:AddItem(self.currentOwnerId, Config.items.signedContract, 1, {
             contractId = self.id,
             role = "previous_owner",
             vehicle = self.vehicle.plate,
+            plate = self.vehicle.plate,
+            newOwner = self.newOwner,
+            newOwnerCitizenID = self.newOwnerCitizenID,
+            oldOwner = self.currentOwner,
+            oldOwnerCitizenID = self.currentOwnerCitizenID,
             transferredTo = self.newOwner,
             date = os.date("%Y-%m-%d %H:%M:%S")
         })
-        
+
         Framework:AddItem(self.newOwnerId, Config.items.signedContract, 1, {
             contractId = self.id,
-            role = "new_owner", 
+            role = "new_owner",
             vehicle = self.vehicle.plate,
+            plate = self.vehicle.plate,
+            newOwner = self.newOwner,
+            newOwnerCitizenID = self.newOwnerCitizenID,
+            oldOwner = self.currentOwner,
+            oldOwnerCitizenID = self.currentOwnerCitizenID,
             transferredFrom = self.currentOwner,
             date = os.date("%Y-%m-%d %H:%M:%S")
         })
     end
-    
+
     -- Notify both parties
     self:notifyTransferComplete()
-    
+
     -- Clean up
     self:cleanup()
-    
+
     return true
 end
 
@@ -234,7 +244,7 @@ function Contract:executeVehicleTransfer()
         })
         return false, "Failed to transfer vehicle ownership in database."
     end
-    
+
     return true
 end
 
@@ -245,14 +255,14 @@ function Contract:notifyTransferComplete()
         duration = Config.notifications.duration,
         position = Config.notifications.position
     }
-    
+
     -- Notify current owner
     TriggerClientEvent('ox_lib:notify', self.currentOwnerId, lib.table.merge(notificationData, {
         description = locale('transfer_complete_current_owner'):format(
             self.vehicle.plate, self.newOwner
         )
     }))
-    
+
     -- Notify new owner
     TriggerClientEvent('ox_lib:notify', self.newOwnerId, lib.table.merge(notificationData, {
         description = locale('transfer_complete_new_owner'):format(
@@ -264,7 +274,7 @@ end
 function Contract:cancel(reason)
     self.status = "cancelled"
     self.lastModified = os.time()
-    
+
     -- Notify parties
     local notificationData = {
         title = locale('contract_cancelled'),
@@ -273,17 +283,17 @@ function Contract:cancel(reason)
         duration = Config.notifications.duration,
         position = Config.notifications.position
     }
-    
+
     TriggerClientEvent('ox_lib:notify', self.currentOwnerId, notificationData)
     TriggerClientEvent('ox_lib:notify', self.newOwnerId, notificationData)
-    
+
     self:cleanup()
 end
 
 function Contract:expire()
     self.status = "expired"
     self.lastModified = os.time()
-    
+
     -- Notify parties
     local notificationData = {
         title = locale('contract_expired'),
@@ -292,10 +302,10 @@ function Contract:expire()
         duration = Config.notifications.duration,
         position = Config.notifications.position
     }
-    
+
     TriggerClientEvent('ox_lib:notify', self.currentOwnerId, notificationData)
     TriggerClientEvent('ox_lib:notify', self.newOwnerId, notificationData)
-    
+
     self:cleanup()
 end
 
