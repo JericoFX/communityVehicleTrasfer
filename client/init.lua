@@ -12,20 +12,20 @@ local currentContract = nil
 ---@param data table|nil Contract data
 ---@param show boolean Whether to show or hide UI
 local function toggleNUI(data, show)
-    if show and isUIOpen then
+    if show and isUIOpen or IsNuiFocused() then
         return -- Prevent multiple UI instances
     end
-    
+
     isUIOpen = show
     SetNuiFocus(show, show)
-    
+
     SendNUIMessage({
         action = show and "open" or "close",
         data = {
             contract = data or nil
         }
     })
-    
+
     if show then
         currentContract = data
     else
@@ -40,14 +40,14 @@ end
 local function getClosestVehicle()
     local playerCoords = GetEntityCoords(cache.ped)
     local vehicle = lib.getClosestVehicle(playerCoords, Config.maxVehicleDistance, true)
-    
+
     if not vehicle then
         return nil, nil, nil
     end
-    
+
     local vehicleNetId = NetworkGetNetworkIdFromEntity(vehicle)
     local plate = GetVehicleNumberPlateText(vehicle):gsub("%s+", "") -- Remove spaces
-    
+
     return vehicle, vehicleNetId, plate
 end
 
@@ -64,10 +64,9 @@ local function startNewContract(targetData)
         })
         return
     end
-    
-    -- Get closest vehicle
+
     local vehicle, vehicleNetId, plate = getClosestVehicle()
-    
+
     if not vehicle then
         lib.notify({
             title = locale('no_vehicle_found'),
@@ -78,8 +77,7 @@ local function startNewContract(targetData)
         })
         return
     end
-    
-    -- Check if player has contract item (if required)
+
     if Config.items.requireContractItem then
         local hasItem = lib.callback.await("orderVehicleTransfer::server::hasItem", false, Config.items.blankContract, 1)
         if not hasItem then
@@ -93,17 +91,15 @@ local function startNewContract(targetData)
             return
         end
     end
-    
-    -- Prepare contract data
+
     local contractData = {
         newOwnerId = GetPlayerServerId(targetData.entity),
         plate = plate,
         vehicleNetId = vehicleNetId
     }
-    
-    -- Send to server
+
     local result, error = lib.callback.await("orderVehicleTransfer::server::startNewContract", false, contractData)
-    
+
     if not result then
         lib.notify({
             title = locale('error'),
@@ -114,8 +110,7 @@ local function startNewContract(targetData)
         })
         return
     end
-    
-    -- Open UI for current owner to sign
+
     toggleNUI(result, true)
 end
 
@@ -123,14 +118,12 @@ end
 ---@param contractData table Contract data from server
 local function openNewOwnerSignUI(contractData)
     if isUIOpen then
-        toggleNUI(nil, false) -- Close any existing UI
-        Wait(100) -- Small delay to ensure proper state
+        toggleNUI(nil, false)
+        Wait(100)
     end
-    
+
     toggleNUI(contractData, true)
 end
-
---#region NUI Callbacks
 
 RegisterNUICallback("close", function(data, cb)
     toggleNUI(nil, false)
@@ -142,9 +135,9 @@ RegisterNUICallback("CurrentOwnerSigned", function(data, cb)
         cb("error")
         return
     end
-    
+
     local success, error = lib.callback.await("orderVehicleTransfer::server::currentOwnerSigned", false, currentContract)
-    
+
     if success then
         toggleNUI(nil, false)
         lib.notify({
@@ -163,7 +156,7 @@ RegisterNUICallback("CurrentOwnerSigned", function(data, cb)
             position = Config.notifications.position
         })
     end
-    
+
     cb("ok")
 end)
 
@@ -172,9 +165,9 @@ RegisterNUICallback("NewOwnerSigned", function(data, cb)
         cb("error")
         return
     end
-    
+
     local success, error = lib.callback.await("orderVehicleTransfer::server::newOwnerSigned", false, currentContract)
-    
+
     if success then
         toggleNUI(nil, false)
         lib.notify({
@@ -193,7 +186,7 @@ RegisterNUICallback("NewOwnerSigned", function(data, cb)
             position = Config.notifications.position
         })
     end
-    
+
     cb("ok")
 end)
 
@@ -201,7 +194,7 @@ RegisterNUICallback("cancel", function(data, cb)
     if currentContract then
         lib.callback.await("orderVehicleTransfer::server::cancelContract", false, currentContract)
     end
-    
+
     toggleNUI(nil, false)
     cb("ok")
 end)
@@ -217,15 +210,7 @@ RegisterNUICallback("error", function(data, cb)
     cb("ok")
 end)
 
---#endregion
-
---#region Events
-
 RegisterNetEvent("orderVehicleTransfer::client::signNewOwner", openNewOwnerSignUI)
-
---#endregion
-
---#region ox_target Integration
 
 CreateThread(function()
     exports.ox_target:addGlobalPed({
@@ -234,18 +219,15 @@ CreateThread(function()
         label = locale('vehicle_transfer'),
         distance = 2.5,
         canInteract = function(entity, distance, coords, name)
-            -- Only allow interaction with other players (not self)
             if not IsEntityAPed(entity) then return false end
             if IsPedDeadOrDying(entity, true) then return false end
             if IsPedInAnyVehicle(entity, false) then return false end
-            if entity == cache.ped then return false end -- Prevent self-interaction
-            
-            -- Check if there's a vehicle nearby
+            if entity == cache.ped then return false end
             local vehicle, _, _ = getClosestVehicle()
             if not vehicle then return false end
-            
-            local hasItem = lib.callback.await("orderVehicleTransfer::server::hasItem", false, Config.items.requireContractItem, 1)
-            return hasItem -- We'll check this in the actual function
+            local hasItem = lib.callback.await("orderVehicleTransfer::server::hasItem", false,
+                Config.items.requireContractItem, 1)
+            return hasItem
         end,
         onSelect = function(data)
             startNewContract(data)
@@ -253,16 +235,10 @@ CreateThread(function()
     })
 end)
 
---#endregion
-
---#region Cleanup on resource stop
-
 AddEventHandler('onResourceStop', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    
+
     if isUIOpen then
         toggleNUI(nil, false)
     end
 end)
-
---#endregion

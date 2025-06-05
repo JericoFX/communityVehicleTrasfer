@@ -1,21 +1,19 @@
 local Core = lib.class("qb-core")
 local db = require "server.modules.database.qb_core"
-local inventory = require "server.modules.inventory.init"
 
 function Core:load()
     self.name = "qb-core"
     self.core = exports["qb-core"]:GetCoreObject()
     self.private.db = db
-    self.private.inventory = inventory
 end
 
 function Core:GetPlayerInformation(source)
     local player = self.core.Functions.GetPlayer(source)
     if not player then return nil end
-    
+
     local charinfo = player.PlayerData.charinfo
     if not charinfo then return nil end
-    
+
     return {
         source = source,
         citizenid = player.PlayerData.citizenid,
@@ -39,23 +37,6 @@ end
 function Core:GetPlayer(source)
     return self.core.Functions.GetPlayer(source)
 end
-
-
-
--- Funciones de inventario (usando sistema automático)
-function Core:AddItem(source, item, amount, metadata, slot)
-    return self.private.inventory.AddItem(source, item, amount, metadata, slot)
-end
-
-function Core:RemoveItem(source, item, amount, slot)
-    return self.private.inventory.RemoveItem(source, item, amount, slot)
-end
-
-function Core:HasItem(source, item, amount)
-    return self.private.inventory.HasItem(source, item, amount)
-end
-
-
 
 Core:load()
 return Core

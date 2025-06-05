@@ -4,7 +4,7 @@ local Database = {}
 local function DetectFramework()
     if GetResourceState('es_extended') == 'started' then
         return 'es_extended'
-    elseif GetResourceState('qbx_core') == 'started' then
+    elseif GetResourceState('qbx_core') == 'started' and GetResourceState('qb-core') == 'missing' then
         return 'qbx_core'
     elseif GetResourceState('qb-core') == 'started' then
         return 'qb_core'
@@ -46,4 +46,4 @@ end
 -- Información de debug
 print(('[Database API] Framework detectado: %s'):format(framework))
 
-return Database 
+return Database

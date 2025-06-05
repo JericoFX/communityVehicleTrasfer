@@ -92,7 +92,6 @@ function Contract:generateSecurityHash()
         tostring(self.createdAt)
     }, "|")
     
-    -- Simple hash (in production, use a proper hashing function)
     local hash = 0
     for i = 1, #dataToHash do
         hash = hash + string.byte(dataToHash, i)
